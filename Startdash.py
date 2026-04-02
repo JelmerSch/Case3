@@ -6,14 +6,13 @@ import plotly.express as px
 import zipfile
 import os
 import io
-from pathlib import Path
 
 ######################
 ###    inladen docs###
 ######################
 
-Airports_ex_cl = "data/airports-extended-clean.csv"
-ZIPPIE = "data/excel_files.zip"  # Pad naar jouw ZIP-bestand
+Airports_ex_cl = pd.read_csv("airports-extended-clean.csv")
+Zippies = "data/excel_files.zip"  
 
 ######################
 ###loading in cache###
@@ -21,27 +20,11 @@ ZIPPIE = "data/excel_files.zip"  # Pad naar jouw ZIP-bestand
 
 @st.cache_data(show_spinner="Airports laden...")
 def load_airports(path: str) -> pd.DataFrame:
-    """Laadt airports-extended-clean.csv en cached het resultaat."""
     return pd.read_csv(path, low_memory=False)
  
  
 @st.cache_data(show_spinner="Vluchtdata uit ZIP laden en converteren...")
 def load_flights_from_zip(zip_path: str) -> dict[str, pd.DataFrame]:
-    """
-    Strategie: ZIP → Excel in-memory → direct naar pandas DataFrame.
- 
-    Waarom deze aanpak:
-    - Excel-bestanden hebben dezelfde kolomstructuur maar mogen NIET gemixt worden
-      (elke vlucht is een apart bestand).
-    - Door ze via io.BytesIO in te lezen en direct naar DataFrame te converteren,
-      sla je de Excel-overhead over bij hergebruik (cache doet de rest).
-    - Resultaat: dict van { vlucht_sleutel: DataFrame }, makkelijk op te vragen
-      via session_state["flights"]["vlucht_naam"].
- 
-    Naamgeving sleutel:
-    - Bestandsnaam zonder extensie wordt de dict-sleutel, bijv. "vlucht_AMS_2024_01"
-    - Zo kun je later eenvoudig selecteren: st.selectbox(options=list(flights.keys()))
-    """
     flights: dict[str, pd.DataFrame] = {}
  
     with zipfile.ZipFile(zip_path, "r") as z:
@@ -76,17 +59,6 @@ def load_flights_from_zip(zip_path: str) -> dict[str, pd.DataFrame]:
 ######################
 
 def initialize_data():
-    """
-    Roep deze functie aan bovenaan elk pagina-bestand.
- 
-    Gebruik in je pagina:
-        from data_loader import initialize_data, show_data_debugger
-        initialize_data()
- 
-        airports = st.session_state["airports"]          # DataFrame
-        flights  = st.session_state["flights"]           # dict { naam: DataFrame }
-        vlucht   = flights["vlucht_AMS_2024_01"]         # één specifieke vlucht
-    """
     # ── Airports CSV ──────────────────────────
     if "airports" not in st.session_state:
         if os.path.exists(AIRPORTS_CSV_PATH):
@@ -120,13 +92,9 @@ def initialize_data():
 ######################
 
 def show_data_debugger():
-    """
-    Toon onderin de pagina een overzichtstabel van alle geladen data.
-    Roep aan onderaan je pagina-bestand, na je overige inhoud.
-    """
     st.divider()
  
-    with st.expander("🛠️ Data Debugger – geladen bestanden", expanded=True):
+    with st.expander("Data Debugger – geladen bestanden", expanded=True):
         st.caption("Overzicht van alle datasets in `st.session_state`")
  
         rows = []
@@ -155,7 +123,7 @@ def show_data_debugger():
                 "Bestand"       : FLIGHTS_ZIP_PATH,
                 "Bron"          : "ZIP",
                 "session_state" : "flights",
-                "Status"        : "❌ Niet gevonden of leeg",
+                "Status"        : "Niet gevonden of leeg",
                 "Rijen"         : "-",
                 "Kolommen"      : "-",
                 "Geheugen (MB)" : "-",
@@ -194,7 +162,7 @@ def _make_debug_row(bestand: str, bron: str, sleutel: str, df) -> dict:
             "Bestand"       : bestand,
             "Bron"          : bron,
             "session_state" : sleutel,
-            "Status"        : "✅ Geladen",
+            "Status"        : "Geladen",
             "Rijen"         : f"{len(df):,}",
             "Kolommen"      : len(df.columns),
             "Geheugen (MB)" : f"{df.memory_usage(deep=True).sum() / 1e6:.2f}",
@@ -203,7 +171,7 @@ def _make_debug_row(bestand: str, bron: str, sleutel: str, df) -> dict:
         "Bestand"       : bestand,
         "Bron"          : bron,
         "session_state" : sleutel,
-        "Status"        : "❌ Niet gevonden",
+        "Status"        : "Niet gevonden",
         "Rijen"         : "-",
         "Kolommen"      : "-",
         "Geheugen (MB)" : "-",
