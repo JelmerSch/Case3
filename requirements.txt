@@ -3,8 +3,3 @@ pandas
 matplotlib
 seaborn
 plotly
-zipfile
-os
-io
-pathlib
-Startdash
