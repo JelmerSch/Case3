@@ -3,70 +3,107 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
+import zipfile
+import os
+import io
+from pathlib import Path
 
-CSV_PATH = "data/airports-extended-clean.csv"
-ZIP_PATH = "data/excel_files.zip"  # Pad naar jouw ZIP-bestand
+######################
+###    inladen docs###
+######################
+
+Airports_ex_cl = "data/airports-extended-clean.csv"
+ZIPPIE = "data/excel_files.zip"  # Pad naar jouw ZIP-bestand
 
 ######################
 ###loading in cache###
 ######################
 
 @st.cache_data(show_spinner="Airports laden...")
-def load_airports_csv(path: str) -> pd.DataFrame:
-    """Laadt het airports CSV-bestand en cached het resultaat."""
-    df = pd.read_csv(path, low_memory=False)
-    return df
+def load_airports(path: str) -> pd.DataFrame:
+    """Laadt airports-extended-clean.csv en cached het resultaat."""
+    return pd.read_csv(path, low_memory=False)
  
  
-@st.cache_data(show_spinner="Excel-bestanden uit ZIP laden...")
-def load_excel_from_zip(zip_path: str) -> dict[str, pd.DataFrame]:
+@st.cache_data(show_spinner="Vluchtdata uit ZIP laden en converteren...")
+def load_flights_from_zip(zip_path: str) -> dict[str, pd.DataFrame]:
     """
-    Pakt een ZIP uit en leest alle Excel-bestanden (.xlsx / .xls) in.
-    Geeft een dict terug: { bestandsnaam: DataFrame }.
+    Strategie: ZIP → Excel in-memory → direct naar pandas DataFrame.
+ 
+    Waarom deze aanpak:
+    - Excel-bestanden hebben dezelfde kolomstructuur maar mogen NIET gemixt worden
+      (elke vlucht is een apart bestand).
+    - Door ze via io.BytesIO in te lezen en direct naar DataFrame te converteren,
+      sla je de Excel-overhead over bij hergebruik (cache doet de rest).
+    - Resultaat: dict van { vlucht_sleutel: DataFrame }, makkelijk op te vragen
+      via session_state["flights"]["vlucht_naam"].
+ 
+    Naamgeving sleutel:
+    - Bestandsnaam zonder extensie wordt de dict-sleutel, bijv. "vlucht_AMS_2024_01"
+    - Zo kun je later eenvoudig selecteren: st.selectbox(options=list(flights.keys()))
     """
-    excel_frames: dict[str, pd.DataFrame] = {}
+    flights: dict[str, pd.DataFrame] = {}
  
     with zipfile.ZipFile(zip_path, "r") as z:
-        excel_names = [
+        all_files = [
             name for name in z.namelist()
-            if name.endswith((".xlsx", ".xls")) and not name.startswith("__MACOSX")
+            if not name.startswith("__MACOSX") and not name.endswith("/")
         ]
  
-        for name in excel_names:
-            with z.open(name) as f:
-                # Lees in via bytes-buffer zodat pandas de bestandsnaam niet nodig heeft
-                data = io.BytesIO(f.read())
-                df = pd.read_excel(data)
-                # Gebruik alleen de bestandsnaam (zonder mappad in de ZIP)
-                short_name = Path(name).name
-                excel_frames[short_name] = df
+        excel_files = [f for f in all_files if f.endswith((".xlsx", ".xls"))]
+        csv_files   = [f for f in all_files if f.endswith(".csv")]
  
-    return excel_frames
+        # ── Excel → DataFrame ──────────────────
+        for name in excel_files:
+            with z.open(name) as f:
+                buf = io.BytesIO(f.read())
+                df  = pd.read_excel(buf)
+                key = Path(name).stem          # bestandsnaam zonder extensie
+                flights[key] = df
+ 
+        # ── CSV uit ZIP (indien aanwezig) ──────
+        for name in csv_files:
+            with z.open(name) as f:
+                buf = io.BytesIO(f.read())
+                df  = pd.read_csv(buf, low_memory=False)
+                key = Path(name).stem
+                flights[key] = df
+ 
+    return flights
 
 ######################
 ###in session state###
 ######################
+
 def initialize_data():
     """
-    Roep deze functie aan bovenaan je pagina-bestand.
-    Laadt alle data (via cache) en zet ze in st.session_state.
+    Roep deze functie aan bovenaan elk pagina-bestand.
+ 
+    Gebruik in je pagina:
+        from data_loader import initialize_data, show_data_debugger
+        initialize_data()
+ 
+        airports = st.session_state["airports"]          # DataFrame
+        flights  = st.session_state["flights"]           # dict { naam: DataFrame }
+        vlucht   = flights["vlucht_AMS_2024_01"]         # één specifieke vlucht
     """
     # ── Airports CSV ──────────────────────────
     if "airports" not in st.session_state:
-        if os.path.exists(CSV_PATH):
-            st.session_state["airports"] = load_airports_csv(CSV_PATH)
+        if os.path.exists(AIRPORTS_CSV_PATH):
+            st.session_state["airports"] = load_airports(AIRPORTS_CSV_PATH)
         else:
-            st.warning(f"CSV niet gevonden: `{CSV_PATH}`")
+            st.warning(f"Bestand niet gevonden: `{AIRPORTS_CSV_PATH}`")
             st.session_state["airports"] = None
  
-    # ── Excel-bestanden uit ZIP ───────────────
-    if "excel_data" not in st.session_state:
-        if os.path.exists(ZIP_PATH):
-            st.session_state["excel_data"] = load_excel_from_zip(ZIP_PATH)
+    # ── Vluchten uit ZIP ──────────────────────
+    if "flights" not in st.session_state:
+        if os.path.exists(FLIGHTS_ZIP_PATH):
+            st.session_state["flights"] = load_flights_from_zip(FLIGHTS_ZIP_PATH)
         else:
-            st.warning(f"ZIP niet gevonden: `{ZIP_PATH}`")
-            st.session_state["excel_data"] = {}
-
+            st.warning(f"ZIP niet gevonden: `{FLIGHTS_ZIP_PATH}`")
+            st.session_state["flights"] = {}
+ 
+ 
 ######################
 ###intro tekst###
 ######################
@@ -84,47 +121,44 @@ def initialize_data():
 
 def show_data_debugger():
     """
-    Toont een debugger-tabel onderaan de pagina.
-    Zet st.session_state["show_debugger"] = True om te activeren.
+    Toon onderin de pagina een overzichtstabel van alle geladen data.
+    Roep aan onderaan je pagina-bestand, na je overige inhoud.
     """
     st.divider()
  
-    with st.expander("🛠️ Data Debugger", expanded=True):
-        st.caption("Overzicht van alle geladen bestanden in `st.session_state`")
+    with st.expander("🛠️ Data Debugger – geladen bestanden", expanded=True):
+        st.caption("Overzicht van alle datasets in `st.session_state`")
  
         rows = []
  
-        # Airports CSV
+        # ── Airports ──────────────────────────
         airports_df = st.session_state.get("airports")
-        rows.append({
-            "Bestand": "airports-extended-clean.csv",
-            "Type": "CSV",
-            "Status": "✅ Geladen" if airports_df is not None else "❌ Niet gevonden",
-            "Rijen": len(airports_df) if airports_df is not None else "-",
-            "Kolommen": len(airports_df.columns) if airports_df is not None else "-",
-            "Grootte (MB)": f"{airports_df.memory_usage(deep=True).sum() / 1e6:.2f}" if airports_df is not None else "-",
-        })
+        rows.append(_make_debug_row(
+            bestand = "airports-extended-clean.csv",
+            bron    = "CSV",
+            sleutel = "airports",
+            df      = airports_df,
+        ))
  
-        # Excel-bestanden uit ZIP
-        excel_data: dict = st.session_state.get("excel_data", {})
-        if excel_data:
-            for naam, df in excel_data.items():
-                rows.append({
-                    "Bestand": naam,
-                    "Type": "Excel (uit ZIP)",
-                    "Status": "✅ Geladen",
-                    "Rijen": len(df),
-                    "Kolommen": len(df.columns),
-                    "Grootte (MB)": f"{df.memory_usage(deep=True).sum() / 1e6:.2f}",
-                })
+        # ── Vluchten ──────────────────────────
+        flights: dict = st.session_state.get("flights", {})
+        if flights:
+            for naam, df in flights.items():
+                rows.append(_make_debug_row(
+                    bestand = naam,
+                    bron    = "Excel (uit ZIP)",
+                    sleutel = f'flights["{naam}"]',
+                    df      = df,
+                ))
         else:
             rows.append({
-                "Bestand": ZIP_PATH,
-                "Type": "ZIP / Excel",
-                "Status": "❌ Niet gevonden of leeg",
-                "Rijen": "-",
-                "Kolommen": "-",
-                "Grootte (MB)": "-",
+                "Bestand"       : FLIGHTS_ZIP_PATH,
+                "Bron"          : "ZIP",
+                "session_state" : "flights",
+                "Status"        : "❌ Niet gevonden of leeg",
+                "Rijen"         : "-",
+                "Kolommen"      : "-",
+                "Geheugen (MB)" : "-",
             })
  
         debug_df = pd.DataFrame(rows)
@@ -133,19 +167,47 @@ def show_data_debugger():
             use_container_width=True,
             hide_index=True,
             column_config={
-                "Status": st.column_config.TextColumn(width="medium"),
-                "Grootte (MB)": st.column_config.TextColumn(width="small"),
+                "Status"        : st.column_config.TextColumn(width="small"),
+                "Geheugen (MB)" : st.column_config.TextColumn(width="small"),
+                "session_state" : st.column_config.TextColumn(width="medium"),
             }
         )
  
-        # Toon kolomnamen per bestand
-        st.markdown("**Kolomnamen per bestand:**")
+        # ── Kolomnamen per bestand ─────────────
+        st.markdown("**Kolomnamen per dataset:**")
+ 
         if airports_df is not None:
-            with st.expander("airports-extended-clean.csv"):
+            with st.expander("airports (airports-extended-clean.csv)"):
                 st.write(list(airports_df.columns))
  
-        for naam, df in excel_data.items():
-            with st.expander(naam):
-                st.write(list(df.columns))
+        for naam, df in flights.items():
+            with st.expander(f'flights["{naam}"]'):
+                col1, col2 = st.columns(2)
+                col1.write(list(df.columns))
+                col2.dataframe(df.head(3), use_container_width=True)
+ 
+ 
+def _make_debug_row(bestand: str, bron: str, sleutel: str, df) -> dict:
+    """Hulpfunctie: maak één rij voor de debugger-tabel."""
+    if df is not None:
+        return {
+            "Bestand"       : bestand,
+            "Bron"          : bron,
+            "session_state" : sleutel,
+            "Status"        : "✅ Geladen",
+            "Rijen"         : f"{len(df):,}",
+            "Kolommen"      : len(df.columns),
+            "Geheugen (MB)" : f"{df.memory_usage(deep=True).sum() / 1e6:.2f}",
+        }
+    return {
+        "Bestand"       : bestand,
+        "Bron"          : bron,
+        "session_state" : sleutel,
+        "Status"        : "❌ Niet gevonden",
+        "Rijen"         : "-",
+        "Kolommen"      : "-",
+        "Geheugen (MB)" : "-",
+    }
+ 
 
 ##  Einde script ###
