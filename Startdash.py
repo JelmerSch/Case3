@@ -7,6 +7,7 @@ import zipfile
 import os
 import io
 from pathlib import Path
+from Startdash import initialize_data
 
 ######################
 ###   Configuratie ###
@@ -72,6 +73,7 @@ def initialize_data():
             st.warning(f"ZIP niet gevonden: `{FLIGHTS_ZIP_PATH}`")
             st.session_state["flights"] = {}
 
+initialize_data()
 ######################
 ###  Intro tekst   ###
 ######################
