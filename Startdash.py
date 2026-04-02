@@ -13,7 +13,7 @@ from pathlib import Path
 ######################
 
 AIRPORTS_CSV_PATH = "airports-extended-clean.csv"
-FLIGHTS_ZIP_PATH  = "data/excel_files.zip"
+FLIGHTS_ZIP_PATH  = "case3_data.zip"
 
 ######################
 ###  Cache functies ###
