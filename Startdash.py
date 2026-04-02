@@ -72,9 +72,6 @@ def initialize_data():
             st.warning(f"ZIP niet gevonden: `{FLIGHTS_ZIP_PATH}`")
             st.session_state["flights"] = {}
 
-# ── Initialiseer bij het laden van dit bestand ──
-initialize_data()
-
 ######################
 ###  Intro tekst   ###
 ######################
