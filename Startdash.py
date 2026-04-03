@@ -21,39 +21,7 @@ FLIGHTS_ZIP_PATH  = "case3_data.zip"
 
 @st.cache_data(show_spinner="Airports laden...")
 def load_airports(path: str) -> pd.DataFrame:
-    """Probeer automatisch de juiste separator en encoding te vinden."""
-    opties = [
-        dict(sep=";",  encoding="utf-8",   decimal=","),
-        dict(sep=",",  encoding="utf-8",   decimal="."),
-        dict(sep=";",  encoding="latin-1", decimal=","),
-        dict(sep=",",  encoding="latin-1", decimal="."),
-        dict(sep="\t", encoding="utf-8",   decimal=","),
-        dict(sep="\t", encoding="latin-1", decimal=","),
-    ]
-
-    for kwargs in opties:
-        try:
-            df = pd.read_csv(
-                path,
-                low_memory=False,
-                on_bad_lines="skip",
-                **kwargs
-            )
-            if len(df.columns) > 1:
-                return df
-        except Exception:
-            continue
-
-    # Laatste redmiddel: Python engine
-    return pd.read_csv(
-        path,
-        sep=";",
-        decimal=",",
-        encoding="latin-1",
-        engine="python",
-        on_bad_lines="skip",
-    )
-
+    return pd.read_csv(path, sep=";", decimal=",", low_memory=False)
 
 @st.cache_data(show_spinner="Vluchtdata uit ZIP laden...")
 def load_flights_from_zip(zip_path: str) -> dict[str, pd.DataFrame]:
