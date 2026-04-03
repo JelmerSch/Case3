@@ -98,4 +98,4 @@ with tab2:
     st.subheader("Gemiddelde Vertraging per Bestemming")
     # Voeg hier je verdere tab2 code toe
 
-    st.subheader("Gemiddelde Vertraging
+    st.subheader("Gemiddelde Vertraging")
