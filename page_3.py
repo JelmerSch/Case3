@@ -126,21 +126,18 @@ with tab2:
 
 with tab3:
     st.header("Vloot & Bestemmingen")
-    col_c, col_d = st.columns(2)
+    
+    st.subheader("Top 10 Bestemmingen")
+    top_dest = display_df['Name'].value_counts().head(10)
+    fig_top = plt.figure(figsize=(10, 5))
+    sns.barplot(x=top_dest.values, y=top_dest.index, palette='Blues_r')
+    plt.xlabel("Aantal vluchten")
+    plt.ylabel("")
+    st.pyplot(fig_top)
 
-    with col_c:
-        st.subheader("Top 10 Bestemmingen")
-        top_dest = display_df['Name'].value_counts().head(10)
-        fig_top = plt.figure(figsize=(10, 5))
-        sns.barplot(x=top_dest.values, y=top_dest.index, palette='Blues_r')
-        plt.xlabel("Aantal vluchten")
-        plt.ylabel("")
-        st.pyplot(fig_top)
-
-    with col_d:
-        st.subheader("Vlootsamenstelling")
-        fleet = display_df['ACT'].value_counts().head(10)
-        fig_fleet = plt.figure(figsize=(10, 5))
-        sns.barplot(x=fleet.values, y=fleet.index, palette='Greens_r')
-        plt.xlabel("Aantal vluchten")
-        st.pyplot(fig_fleet)
+    st.subheader("Vlootsamenstelling")
+    fleet = display_df['ACT'].value_counts().head(10)
+    fig_fleet = plt.figure(figsize=(10, 5))
+    sns.barplot(x=fleet.values, y=fleet.index, palette='Greens_r')
+    plt.xlabel("Aantal vluchten")
+    st.pyplot(fig_fleet)
