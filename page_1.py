@@ -118,11 +118,11 @@ for i, (naam, df) in enumerate(flights_30s.items()):
         ),
     ))
 
-# Amsterdam → Barcelona: centrum op 43N en 3.5L
+# Amsterdam → Barcelona: centrum op 46N en 3.5L
 fig_kaart.update_layout(
     mapbox=dict(
         style="open-street-map",
-        center=dict(lat=45.0, lon=3.5),
+        center=dict(lat=46.0, lon=3.5),
         zoom=4,
     ),
     legend_title="Vlucht",
