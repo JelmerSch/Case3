@@ -1,86 +1,102 @@
+import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# 1. DATA LADEN EN VOORBEREIDEN
-# Inladen met de juiste delimiters
-schedule = pd.read_csv('schedule_airport.csv')
-airports = pd.read_csv('airports-extended-clean.csv', sep=';')
+# Pagina configuratie
+st.set_page_config(page_title="Airport Insights Dashboard", layout="wide")
 
-# Coördinaten opschonen (komma naar punt)
-airports['Latitude'] = airports['Latitude'].str.replace(',', '.').astype(float)
-airports['Longitude'] = airports['Longitude'].str.replace(',', '.').astype(float)
+# Functie om data in te laden (gecached voor snelheid)
+@st.cache_data
+def load_data():
+    # Inladen met de juiste delimiters
+    schedule = pd.read_csv('schedule_airport.csv')
+    airports = pd.read_csv('airports-extended-clean.csv', sep=';')
 
-# Datums en tijden combineren en omzetten naar datetime objecten
-schedule['Scheduled_DT'] = pd.to_datetime(schedule['STD'] + ' ' + schedule['STA_STD_ltc'], dayfirst=True)
-schedule['Actual_DT'] = pd.to_datetime(schedule['STD'] + ' ' + schedule['ATA_ATD_ltc'], dayfirst=True)
+    # Coördinaten opschonen
+    airports['Latitude'] = airports['Latitude'].str.replace(',', '.').astype(float)
+    airports['Longitude'] = airports['Longitude'].str.replace(',', '.').astype(float)
 
-# Vertraging berekenen in minuten
-schedule['Delay_min'] = (schedule['Actual_DT'] - schedule['Scheduled_DT']).dt.total_seconds() / 60
+    # Datums en tijden combineren
+    schedule['Scheduled_DT'] = pd.to_datetime(schedule['STD'] + ' ' + schedule['STA_STD_ltc'], dayfirst=True)
+    schedule['Actual_DT'] = pd.to_datetime(schedule['STD'] + ' ' + schedule['ATA_ATD_ltc'], dayfirst=True)
 
-# Datasets samenvoegen op basis van ICAO code
-df_merged = schedule.merge(airports[['ICAO', 'Name', 'City', 'Country']], 
-                           left_on='Org/Des', right_on='ICAO', how='left')
+    # Vertraging berekenen
+    schedule['Delay_min'] = (schedule['Actual_DT'] - schedule['Scheduled_DT']).dt.total_seconds() / 60
+    
+    # Mergen
+    df = schedule.merge(airports[['ICAO', 'Name', 'City', 'Country']], 
+                        left_on='Org/Des', right_on='ICAO', how='left')
+    
+    # Maand en Dag toevoegen
+    df['Month_str'] = df['Scheduled_DT'].dt.to_period('M').astype(str)
+    df['Day_of_Week'] = df['Scheduled_DT'].dt.day_name()
+    
+    return df
 
-# Instellingen voor de stijl van de grafieken
-sns.set_theme(style="whitegrid")
+# Data laden
+df = load_data()
 
-# 2. VISUALISATIE: TOP 10 LANDEN (VOLUME)
-top_countries = df_merged['Country'].value_counts().head(10)
-plt.figure(figsize=(10, 6))
-sns.barplot(x=top_countries.values, y=top_countries.index, palette='viridis')
-plt.title('Top 10 Bestemmingen/Herkomst landen')
-plt.xlabel('Aantal vluchten')
-plt.ylabel('Land')
-plt.tight_layout()
-plt.show()
+# --- STREAMLIT UI ---
+st.title("✈️ Airport Operations & Insights Dashboard")
+st.markdown("Dit dashboard geeft inzicht in vluchtvolumes, bestemmingen en vertragingen op basis van de verstrekte data.")
 
-# 3. VISUALISATIE: GEMIDDELDE VERTRAGING PER LAND
-# We kijken alleen naar vluchten met een positieve vertraging
-delays = df_merged[df_merged['Delay_min'] > 0]
-avg_delay_country = delays.groupby('Country')['Delay_min'].mean().reindex(top_countries.index)
+# Sidebar filters
+st.sidebar.header("Filters")
+selected_country = st.sidebar.multiselect("Selecteer Landen", options=df['Country'].unique(), default=None)
 
-plt.figure(figsize=(10, 6))
-sns.barplot(x=avg_delay_country.values, y=avg_delay_country.index, palette='magma')
-plt.title('Gemiddelde Vertraging per Land (Top 10 volumes)')
-plt.xlabel('Gemiddelde vertraging (minuten)')
-plt.ylabel('Land')
-plt.tight_layout()
-plt.show()
+if selected_country:
+    display_df = df[df['Country'].isin(selected_country)]
+else:
+    display_df = df
 
-# 4. VISUALISATIE: MAANDELIJKS VLUCHTVOLUME (TIJDLIJN)
-df_merged['Month_dt'] = df_merged['Scheduled_DT'].dt.to_period('M').astype(str)
-monthly_flights = df_merged.groupby('Month_dt').size()
+# Key Metrics
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    st.metric("Totaal aantal vluchten", len(display_df))
+with col2:
+    avg_delay = display_df[display_df['Delay_min'] > 0]['Delay_min'].mean()
+    st.metric("Gem. Vertraging", f"{avg_delay:.1f} min")
+with col3:
+    st.metric("Unieke Bestemmingen", display_df['Org/Des'].nunique())
+with col4:
+    most_common_ac = display_df['ACT'].mode()[0]
+    st.metric("Meest gebruikt toestel", most_common_ac)
 
-plt.figure(figsize=(12, 6))
-monthly_flights.plot(kind='line', marker='o', color='teal', linewidth=2)
-plt.title('Aantal vluchten per maand (2019-2020)')
-plt.xlabel('Maand')
-plt.ylabel('Aantal vluchten')
-plt.xticks(rotation=45)
-plt.grid(True)
-plt.tight_layout()
-plt.show()
+# Tabs voor verschillende analyses
+tab1, tab2, tab3 = st.tabs(["📊 Volumes", "⏰ Vertragingen", "🛩️ Vloot & Bestemmingen"])
 
-# 5. VISUALISATIE: DRUKSTE DAGEN VAN DE WEEK
-df_merged['Day_of_Week'] = df_merged['Scheduled_DT'].dt.day_name()
-order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-day_volume = df_merged['Day_of_Week'].value_counts().reindex(order)
+with tab1:
+    st.header("Vluchtvolumes")
+    
+    col_a, col_b = st.columns(2)
+    
+    with col_a:
+        st.subheader("Volume per Maand")
+        fig_vol = plt.figure(figsize=(10, 5))
+        monthly_data = display_df.groupby('Month_str').size()
+        plt.plot(monthly_data.index, monthly_data.values, marker='o', color='teal')
+        plt.xticks(rotation=45)
+        plt.ylabel("Aantal vluchten")
+        st.pyplot(fig_vol)
 
-plt.figure(figsize=(10, 6))
-sns.barplot(x=day_volume.index, y=day_volume.values, palette='coolwarm')
-plt.title('Vluchtvolume per Dag van de Week')
-plt.xlabel('Dag')
-plt.ylabel('Aantal vluchten')
-plt.tight_layout()
-plt.show()
+    with col_b:
+        st.subheader("Volume per Dag")
+        fig_day = plt.figure(figsize=(10, 5))
+        order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        day_data = display_df['Day_of_Week'].value_counts().reindex(order)
+        sns.barplot(x=day_data.index, y=day_data.values, palette='coolwarm')
+        plt.xticks(rotation=45)
+        st.pyplot(fig_day)
 
-# 6. VISUALISATIE: DISTRIBUTIE VAN VERTRAGINGEN
-plt.figure(figsize=(10, 6))
-# Filter op vertragingen tot 2 uur voor een duidelijk beeld
-sns.histplot(delays[delays['Delay_min'] < 120]['Delay_min'], bins=30, kde=True, color='purple')
-plt.title('Verdeling van Vertragingen (Vluchten < 2 uur vertraging)')
-plt.xlabel('Minuten vertraging')
-plt.ylabel('Aantal vluchten')
-plt.tight_layout()
-plt.show()
+with tab2:
+    st.header("Vertragingsanalyse")
+    
+    st.subheader("Verdeling van Vertragingen (tot 120 min)")
+    fig_hist = plt.figure(figsize=(10, 4))
+    sns.histplot(display_df[(display_df['Delay_min'] > 0) & (display_df['Delay_min'] < 120)]['Delay_min'], 
+                 bins=40, kde=True, color='purple')
+    plt.xlabel("Minuten te laat")
+    st.pyplot(fig_hist)
+
+    st.subheader("Gemiddelde Vertraging
