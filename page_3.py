@@ -108,6 +108,7 @@ with tab2:
     fig_dest = plt.figure(figsize=(10, 4))
     sns.barplot(x=delay_dest.values, y=delay_dest.index, palette='Reds_r')
     plt.xlabel("Gem. vertraging (min)")
+    plt.ylabel("")
     st.pyplot(fig_dest)
 
     st.subheader("Gemiddelde Vertraging per Dag van de Week")
