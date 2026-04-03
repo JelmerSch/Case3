@@ -52,7 +52,7 @@ top_10_hubs = df_hubs.nlargest(10, 'Aantal_Vluchten')
 # 5. Staafdiagram maken
 fig = px.bar(
     top_10_hubs, 
-    x='Aantal Vluchten', 
+    x='Aantal_Vluchten', 
     y='Name',            # De naam van het vliegveld op de y-as
     orientation='h',      # Horizontaal diagram voor betere leesbaarheid van namen
     title='Top 10 Drukste Luchthavens',
