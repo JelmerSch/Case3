@@ -99,4 +99,52 @@ with tab2:
     st.subheader("Gemiddelde Vertraging per Bestemming")
     # Voeg hier je verdere tab2 code toe
 
-    st.subheader("Gemiddelde Vertraging")
+    st.subheader("Gemiddelde Vertraging per Bestemming")
+
+ st.subheader("Gemiddelde Vertraging per Bestemming")
+    delay_dest = (
+        display_df[display_df['Delay_min'] > 0]
+        .groupby('Name')['Delay_min']
+        .mean()
+        .sort_values(ascending=False)
+        .head(10)
+    )
+    fig_dest = plt.figure(figsize=(10, 4))
+    sns.barplot(x=delay_dest.values, y=delay_dest.index, palette='Reds_r')
+    plt.xlabel("Gem. vertraging (min)")
+    st.pyplot(fig_dest)
+
+    st.subheader("Gemiddelde Vertraging per Dag van de Week")
+    order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    delay_day = (
+        display_df[display_df['Delay_min'] > 0]
+        .groupby('Day_of_Week')['Delay_min']
+        .mean()
+        .reindex(order)
+    )
+    fig_day2 = plt.figure(figsize=(10, 4))
+    sns.barplot(x=delay_day.index, y=delay_day.values, palette='coolwarm')
+    plt.xticks(rotation=45)
+    plt.ylabel("Gem. vertraging (min)")
+    st.pyplot(fig_day2)
+
+with tab3:
+    st.header("Vloot & Bestemmingen")
+
+    col_c, col_d = st.columns(2)
+
+    with col_c:
+        st.subheader("Top 10 Bestemmingen")
+        top_dest = display_df['Name'].value_counts().head(10)
+        fig_top = plt.figure(figsize=(10, 5))
+        sns.barplot(x=top_dest.values, y=top_dest.index, palette='Blues_r')
+        plt.xlabel("Aantal vluchten")
+        st.pyplot(fig_top)
+
+    with col_d:
+        st.subheader("Vlootsamenstelling")
+        fleet = display_df['ACT'].value_counts().head(10)
+        fig_fleet = plt.figure(figsize=(10, 5))
+        sns.barplot(x=fleet.values, y=fleet.index, palette='Greens_r')
+        plt.xlabel("Aantal vluchten")
+        st.pyplot(fig_fleet)
