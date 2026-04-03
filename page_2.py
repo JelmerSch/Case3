@@ -20,15 +20,16 @@ flight_counts = df_schedule.groupby('Org/Des').size().reset_index(name='FLT')
 df_map = pd.merge(df_airports, flight_counts, left_on='ICAO', right_on='Org/Des', how='inner')
 
 # 5. Maak het bubbeldiagram
-fig = px.scatter_geo(
-    df_map,
-    lat='Latitude',
-    lon='Longitude',
-    size='FLT',               # Grootte op basis van aantal vluchten
-    hover_name='Name',        # Toon naam van vliegveld bij hover
-    color='FLT',              # Kleur op basis van drukte
-    projection="natural earth",
-    title='Drukte op luchthavens op basis van vliegschema'
+fig = px.bar(
+    top_10_hubs, 
+    x='Aantal_Vluchten',       # GEFIXT: underscore toegevoegd
+    y='Name', 
+    orientation='h', 
+    title='Top 10 Drukste Luchthavens',
+    # In de labels kun je WEL spaties gebruiken voor de weergave
+    labels={'Name': 'Luchthaven', 'Aantal_Vluchten': 'Totaal aantal vluchten'},
+    color='Aantal_Vluchten',   # GEFIXT: underscore toegevoegd
+    color_continuous_scale='Viridis'
 )
 
 fig.show()
