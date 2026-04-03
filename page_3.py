@@ -9,8 +9,9 @@ st.set_page_config(page_title="Airport Insights Dashboard", layout="wide")
 # Functie om data in te laden (gecached voor snelheid)
 @st.cache_data
 def load_data():
-    schedule = pd.read_csv('schedule_airport.csv')
-    airports = pd.read_csv('airports-extended-clean.csv', sep=';')
+    df_airports = pd.read_csv('airports-extended-clean.csv', sep=';', decimal=',')
+    df_schedule = pd.read_csv('schedule_airport.csv')
+
 
     airports['Latitude'] = airports['Latitude'].str.replace(',', '.').astype(float)
     airports['Longitude'] = airports['Longitude'].str.replace(',', '.').astype(float)
