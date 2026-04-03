@@ -71,14 +71,20 @@ gem_duur    = sum(gem_tijden)    / len(gem_tijden)    if gem_tijden    else 0
 gem_snelh   = sum(gem_snelheden) / len(gem_snelheden) if gem_snelheden else 0
 max_hoogte  = max(max_hoogtes)                        if max_hoogtes   else 0
 
+# Voor berkening snelste vlucht:
+snelste_duur   = min(gem_tijden) if gem_tijden else 0
+snelste_min    = int(snelste_duur // 60)
+snelste_sec    = int(snelste_duur % 60)
+
 # Omzetten naar minuten en seconden
 duur_min = int(gem_duur // 60)
 duur_sec = int(gem_duur % 60)
 
-col_m1, col_m2, col_m3 = st.columns(3)
+col_m1, col_m2, col_m3, col_m4 = st.columns(4)
 col_m1.metric("⏱️ Gemiddelde vluchtduur",   f"{duur_min}m {duur_sec}s")
-col_m2.metric("💨 Gemiddelde snelheid",      f"{gem_snelh:.1f} km/h")
-col_m3.metric("🏔️ Max. behaalde hoogte",    f"{max_hoogte:.0f} m")
+col_m2.metric("⚡ Snelste vluchtduur",       f"{snelste_min}m {snelste_sec}s")
+col_m3.metric("💨 Gemiddelde snelheid",      f"{gem_snelh:.1f} km/h")
+col_m4.metric("🏔️ Max. behaalde hoogte",    f"{max_hoogte:.0f} m")
 
 st.divider()
 
