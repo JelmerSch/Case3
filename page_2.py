@@ -21,7 +21,7 @@ df_map = pd.merge(df_airports, flight_counts, left_on='ICAO', right_on='Org/Des'
 
 # 5. Maak het bubbeldiagram
 fig = px.bar(
-    top_10_hubs, 
+    df_map, 
     x='Aantal_Vluchten',       # GEFIXT: underscore toegevoegd
     y='Name', 
     orientation='h', 
