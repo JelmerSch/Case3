@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import numpy as np
 
 # --- 1. DATA INLADEN ---
 # We laden de data één keer in voor de hele pagina
@@ -56,5 +57,48 @@ fig_bar = px.bar(
 fig_bar.update_layout(yaxis={'categoryorder':'total ascending'})
 
 st.plotly_chart(fig_bar, use_container_width=True)
+
+st.divider
+
+# 1. Definieer de coordinaten van de thuisbasis (Schiphol: 52.31, 4.76)
+HOME_LAT = 52.3086
+HOME_LON = 4.7639
+
+# 2. Haal de coordinaten van de bestemmingen op uit de airport-lijst
+# We maken een hulp-dataframe met alleen de nodige info
+df_coords = df_airports[['ICAO', 'Latitude', 'Longitude']].drop_duplicates()
+
+# 3. Voeg de coordinaten toe aan het vluchtschema
+df_schedule = pd.merge(df_schedule, df_coords, left_on='Org/Des', right_on='ICAO', how='left')
+
+# 4. Functie om de afstand (Haversine) te berekenen in km
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371 # Straal van de aarde
+    phi1, phi2 = np.radians(lat1), np.radians(lat2)
+    dphi = np.radians(lat2 - lat1)
+    dlambda = np.radians(lon2 - lon1)
+    a = np.sin(dphi/2)**2 + np.cos(phi1)*np.cos(phi2)*np.sin(dlambda/2)**2
+    return 2 * R * np.arctan2(np.sqrt(a), np.sqrt(1-a))
+
+# 5. Bereken de afstand voor elke vlucht
+df_schedule['Distance_km'] = haversine(HOME_LAT, HOME_LON, df_schedule['Latitude'], df_schedule['Longitude'])
+
+# 6. Voeg de kolom 'Flight_Type' toe op basis van jouw parameters
+def categorize_flight(dist):
+    if dist < 1500:
+        return 'Short-haul'
+    elif 1500 <= dist <= 4000:
+        return 'Medium-haul'
+    elif dist > 4000:
+        return 'Long-haul'
+    else:
+        return 'Unknown'
+
+df_schedule['Flight_Type'] = df_schedule['Distance_km'].apply(categorize_flight)
+
+# Controleer het resultaat
+st.write(df_schedule[['FLT', 'Org/Des', 'Distance_km', 'Flight_Type']].head())
+
+
 
 
