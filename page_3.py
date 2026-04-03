@@ -134,6 +134,7 @@ with tab3:
         fig_top = plt.figure(figsize=(10, 5))
         sns.barplot(x=top_dest.values, y=top_dest.index, palette='Blues_r')
         plt.xlabel("Aantal vluchten")
+        plt.ylable("")
         st.pyplot(fig_top)
 
     with col_d:
