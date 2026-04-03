@@ -12,12 +12,10 @@ st.set_page_config(page_title="Airport Insights Dashboard", layout="wide")
 def load_data():
     base_dir = os.path.dirname(__file__)
 
-    # FIX 1: variabelenamen consistent maken (df_airports → airports, df_schedule → schedule)
     airports = pd.read_csv(os.path.join(base_dir, 'airports-extended-clean.csv'), sep=';', decimal=',')
     schedule = pd.read_csv(os.path.join(base_dir, 'schedule_airport.csv'))
 
-    airports['Latitude'] = airports['Latitude'].str.replace(',', '.').astype(float)
-    airports['Longitude'] = airports['Longitude'].str.replace(',', '.').astype(float)
+    # Latitude/Longitude regels weg — decimal=',' doet dit al bij het inladen
 
     schedule['Scheduled_DT'] = pd.to_datetime(schedule['STD'] + ' ' + schedule['STA_STD_ltc'], dayfirst=True)
     schedule['Actual_DT'] = pd.to_datetime(schedule['STD'] + ' ' + schedule['ATA_ATD_ltc'], dayfirst=True)
