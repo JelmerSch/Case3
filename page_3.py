@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
 
 # Pagina configuratie
 st.set_page_config(page_title="Airport Insights Dashboard", layout="wide")
@@ -9,9 +10,11 @@ st.set_page_config(page_title="Airport Insights Dashboard", layout="wide")
 # Functie om data in te laden (gecached voor snelheid)
 @st.cache_data
 def load_data():
-    df_airports = pd.read_csv('airports-extended-clean.csv', sep=';', decimal=',')
-    df_schedule = pd.read_csv('schedule_airport.csv')
+    base_dir = os.path.dirname(__file__)
 
+    # FIX 1: variabelenamen consistent maken (df_airports → airports, df_schedule → schedule)
+    airports = pd.read_csv(os.path.join(base_dir, 'airports-extended-clean.csv'), sep=';', decimal=',')
+    schedule = pd.read_csv(os.path.join(base_dir, 'schedule_airport.csv'))
 
     airports['Latitude'] = airports['Latitude'].str.replace(',', '.').astype(float)
     airports['Longitude'] = airports['Longitude'].str.replace(',', '.').astype(float)
@@ -39,7 +42,6 @@ st.markdown("Dit dashboard geeft inzicht in vluchtvolumes, bestemmingen en vertr
 st.sidebar.header("Filters")
 selected_country = st.sidebar.multiselect("Selecteer Landen", options=df['Country'].unique(), default=None)
 
-# ✅ FIX: if/else op hetzelfde niveau als selected_country
 if selected_country:
     display_df = df[df['Country'].isin(selected_country)]
 else:
@@ -48,7 +50,6 @@ else:
 # Key Metrics
 col1, col2, col3, col4 = st.columns(4)
 
-# ✅ FIX: with-blokken niet extra inspringen
 with col1:
     st.metric("Totaal aantal vluchten", len(display_df))
 with col2:
@@ -87,6 +88,7 @@ with tab1:
 
 with tab2:
     st.header("Vertragingsanalyse")
+
     st.subheader("Verdeling van Vertragingen (tot 120 min)")
     fig_hist = plt.figure(figsize=(10, 4))
     sns.histplot(
@@ -96,12 +98,8 @@ with tab2:
     plt.xlabel("Minuten te laat")
     st.pyplot(fig_hist)
 
+    # FIX 2: dubbele/drievoudige st.subheader regels verwijderd, enkel één gehouden
     st.subheader("Gemiddelde Vertraging per Bestemming")
-    # Voeg hier je verdere tab2 code toe
-
-    st.subheader("Gemiddelde Vertraging per Bestemming")
-
- st.subheader("Gemiddelde Vertraging per Bestemming")
     delay_dest = (
         display_df[display_df['Delay_min'] > 0]
         .groupby('Name')['Delay_min']
@@ -130,7 +128,6 @@ with tab2:
 
 with tab3:
     st.header("Vloot & Bestemmingen")
-
     col_c, col_d = st.columns(2)
 
     with col_c:
