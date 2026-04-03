@@ -27,11 +27,18 @@ def load_airports(path: str) -> pd.DataFrame:
 
 @st.cache_data(show_spinner="Vluchtdata uit ZIP laden...")
 def load_flights_from_zip(zip_path: str) -> dict[str, pd.DataFrame]:
-    """
-    Laad alle Excel- en CSV-bestanden uit de ZIP.
-    Wordt gecached op serverniveau — hoeft maar één keer te laden.
-    """
     flights: dict[str, pd.DataFrame] = {}
+
+    # Kolommen die numeriek moeten zijn
+    NUMERIEKE_KOLOMMEN = [
+        "Time (secs)",
+        "[3d Latitude]",
+        "[3d Longitude]",
+        "[3d Altitude M]",
+        "[3d Altitude Ft]",
+        "[3d Heading]",
+        "TRUE AIRSPEED (derived)",
+    ]
 
     with zipfile.ZipFile(zip_path, "r") as z:
         all_files = [
@@ -40,19 +47,42 @@ def load_flights_from_zip(zip_path: str) -> dict[str, pd.DataFrame]:
         ]
 
         excel_files = [f for f in all_files if f.endswith((".xlsx", ".xls"))]
-        csv_files   = [f for f in all_files if f.endswith(".csv")]
+        csv_files = [f for f in all_files if f.endswith(".csv")]
 
         for name in excel_files:
             with z.open(name) as f:
                 buf = io.BytesIO(f.read())
-                df  = pd.read_excel(buf)
+                df = pd.read_excel(buf)
+
+                # Komma → punt voor alle numerieke kolommen
+                for col in NUMERIEKE_KOLOMMEN:
+                    if col in df.columns:
+                        df[col] = (
+                            df[col]
+                            .astype(str)
+                            .str.replace(",", ".", regex=False)
+                            .str.strip()
+                        )
+                        df[col] = pd.to_numeric(df[col], errors="coerce")
+
                 key = Path(name).stem
                 flights[key] = df
 
         for name in csv_files:
             with z.open(name) as f:
                 buf = io.BytesIO(f.read())
-                df  = pd.read_csv(buf, low_memory=False)
+                df = pd.read_csv(buf, low_memory=False)
+
+                for col in NUMERIEKE_KOLOMMEN:
+                    if col in df.columns:
+                        df[col] = (
+                            df[col]
+                            .astype(str)
+                            .str.replace(",", ".", regex=False)
+                            .str.strip()
+                        )
+                        df[col] = pd.to_numeric(df[col], errors="coerce")
+
                 key = Path(name).stem
                 flights[key] = df
 
