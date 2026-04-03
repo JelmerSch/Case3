@@ -122,7 +122,7 @@ for i, (naam, df) in enumerate(flights_30s.items()):
 fig_kaart.update_layout(
     mapbox=dict(
         style="open-street-map",
-        center=dict(lat=42.0, lon=3.5),
+        center=dict(lat=40.0, lon=3.5),
         zoom=4,
     ),
     legend_title="Vlucht",
