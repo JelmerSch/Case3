@@ -1,72 +1,60 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 import plotly.express as px
 
-
-
-
-# 1. Laad de vliegvelden (let op de puntkomma en de komma als decimaal)
-df_airports = pd.read_csv('airports-extended-clean.csv', sep=';', decimal=',')
-
-# 2. Laad de vluchten
-df_schedule = pd.read_csv('schedule_airport.csv')
-
-# 3. Tel het aantal vluchten per vliegveld (kolom 'Org/Des')
-flight_counts = df_schedule.groupby('Org/Des').size().reset_index(name='FLT')
-
-# 4. Voeg de data samen
-# We koppelen 'ICAO' uit het vliegveld-bestand aan 'Org/Des' uit de tellingen
-df_map = pd.merge(df_airports, flight_counts, left_on='ICAO', right_on='Org/Des', how='inner')
-
-# 5. Maak het bubbeldiagram
-fig = px.bar(
-    df_map, 
-    x='Aantal_Vluchten',       # GEFIXT: underscore toegevoegd
-    y='Name', 
-    orientation='h', 
-    title='Top 10 Drukste Luchthavens',
-    # In de labels kun je WEL spaties gebruiken voor de weergave
-    labels={'Name': 'Luchthaven', 'Aantal_Vluchten': 'Totaal aantal vluchten'},
-    color='Aantal_Vluchten',   # GEFIXT: underscore toegevoegd
-    color_continuous_scale='Viridis'
-)
-
-fig.show()
-
-st.divider()
-
-# Een staaf diagram van de 10 drukste luchthavens
-
+# --- 1. DATA INLADEN ---
+# We laden de data één keer in voor de hele pagina
 df_airports = pd.read_csv('airports-extended-clean.csv', sep=';', decimal=',')
 df_schedule = pd.read_csv('schedule_airport.csv')
 
-# 2 aantal vluchten per luchthaven
+# --- 2. DATA VOORBEREIDEN ---
+# Tel het aantal vluchten per ICAO code
 flight_counts = df_schedule.groupby('Org/Des').size().reset_index(name='Aantal_Vluchten')
 
-# 3. koppelen aan vliegvelden
-df_hubs = pd.merge(flight_counts, df_airports, left_on='Org/Des', right_on='ICAO', how='inner')
+# Koppel de tellingen aan de vliegveld-informatie (naam, lat, lon)
+# We gebruiken 'inner' om alleen vliegvelden te tonen die in het schema staan
+df_map = pd.merge(df_airports, flight_counts, left_on='ICAO', right_on='Org/Des', how='inner')
 
-# 4. Top 10 drukste luchthavens
-top_10_hubs = df_hubs.nlargest(10, 'Aantal_Vluchten')   
+# --- 3. BUBBEL DIAGRAM (Alle vluchten) ---
+st.title("Wereldwijde Vluchtactiviteit")
+st.write("In dit overzicht zie je alle luchthavens uit het vliegschema.")
 
-# 5. Staafdiagram maken
-fig = px.bar(
-    top_10_hubs, 
-    x='Aantal_Vluchten', 
-    y='Name',            # De naam van het vliegveld op de y-as
-    orientation='h',      # Horizontaal diagram voor betere leesbaarheid van namen
-    title='Top 10 Drukste Luchthavens',
-    labels={'Name': 'Luchthaven', 'Aantal Vluchten': 'Totaal aantal vluchten'},
-    color='Aantal Vluchten',
-    color_continuous_scale='Viridis'
+fig_bubbles = px.scatter_geo(
+    df_map,
+    lat='Latitude',
+    lon='Longitude',
+    size='Aantal_Vluchten',
+    hover_name='Name',
+    color='Aantal_Vluchten',
+    color_continuous_scale='Plasma',
+    projection="natural earth",
+    title='Alle vluchten per luchthaven',
+    labels={'Aantal_Vluchten': 'Aantal Vluchten'}
 )
 
-# Zorg dat de drukste bovenaan staat
-fig.update_layout(yaxis={'categoryorder':'total ascending'})
+st.plotly_chart(fig_bubbles, use_container_width=True)
 
-# 6. Weergeven in Streamlit
-st.title("Luchtvaart Dashboard")
-st.plotly_chart(fig, use_container_width=True)
+st.divider() # Een lijn tussen de twee grafieken
+
+# --- 4. STAAF DIAGRAM (Top 10 hubs) ---
+st.header("Top 10 Drukste Luchthavens")
+
+# Filter de top 10 uit de al bestaande df_map
+top_10_hubs = df_map.nlargest(10, 'Aantal_Vluchten')
+
+fig_bar = px.bar(
+    top_10_hubs, 
+    x='Aantal_Vluchten', 
+    y='Name', 
+    orientation='h', 
+    color='Aantal_Vluchten',
+    color_continuous_scale='Viridis',
+    labels={'Name': 'Luchthaven', 'Aantal_Vluchten': 'Totaal aantal vluchten'}
+)
+
+# Zorg dat de grootste staaf bovenaan staat
+fig_bar.update_layout(yaxis={'categoryorder':'total ascending'})
+
+st.plotly_chart(fig_bar, use_container_width=True)
 
 
