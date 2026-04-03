@@ -45,33 +45,33 @@ st.markdown("Dit dashboard geeft inzicht in vluchtvolumes, bestemmingen en vertr
 st.sidebar.header("Filters")
 selected_country = st.sidebar.multiselect("Selecteer Landen", options=df['Country'].unique(), default=None)
 
-if selected_country:
+    if selected_country:
     display_df = df[df['Country'].isin(selected_country)]
-else:
+    else:
     display_df = df
 
 # Key Metrics
 col1, col2, col3, col4 = st.columns(4)
-with col1:
+    with col1:
     st.metric("Totaal aantal vluchten", len(display_df))
-with col2:
+    with col2:
     avg_delay = display_df[display_df['Delay_min'] > 0]['Delay_min'].mean()
     st.metric("Gem. Vertraging", f"{avg_delay:.1f} min")
-with col3:
+    with col3:
     st.metric("Unieke Bestemmingen", display_df['Org/Des'].nunique())
-with col4:
+    with col4:
     most_common_ac = display_df['ACT'].mode()[0]
     st.metric("Meest gebruikt toestel", most_common_ac)
 
 # Tabs voor verschillende analyses
 tab1, tab2, tab3 = st.tabs(["📊 Volumes", "⏰ Vertragingen", "🛩️ Vloot & Bestemmingen"])
 
-with tab1:
+    with tab1:
     st.header("Vluchtvolumes")
     
     col_a, col_b = st.columns(2)
     
-    with col_a:
+        with col_a:
         st.subheader("Volume per Maand")
         fig_vol = plt.figure(figsize=(10, 5))
         monthly_data = display_df.groupby('Month_str').size()
@@ -80,7 +80,7 @@ with tab1:
         plt.ylabel("Aantal vluchten")
         st.pyplot(fig_vol)
 
-    with col_b:
+        with col_b:
         st.subheader("Volume per Dag")
         fig_day = plt.figure(figsize=(10, 5))
         order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -89,7 +89,7 @@ with tab1:
         plt.xticks(rotation=45)
         st.pyplot(fig_day)
 
-with tab2:
+    with tab2:
     st.header("Vertragingsanalyse")
     
     st.subheader("Verdeling van Vertragingen (tot 120 min)")
