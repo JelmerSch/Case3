@@ -4,38 +4,39 @@ import plotly.express as px
 import numpy as np
 import os
 
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-df_schedule = pd.read_csv(os.path.join(BASE_DIR, 'schedule_airport.csv'), sep=None, engine='python')
-st.write(df_schedule.head())
-
-
-st.write(os.listdir(BASE_DIR))  # toont alle bestanden in de map
-
-
-st.write(os.path.getsize(os.path.join(BASE_DIR, 'schedule_airport.csv')))
-
-df_schedule = pd.read_csv(
-    os.path.join(BASE_DIR, 'schedule_airport.csv'),
-    sep=',',
-    index_col=0  # de eerste lege kolom is de index
-)
 
 # --- 1. DATA INLADEN ---
-# We laden de data één keer in voor de hele pagina
 df_airports = pd.read_csv(os.path.join(BASE_DIR, 'airports-extended-clean.csv'), sep=';', decimal=',')
-df_schedule = pd.read_csv(os.path.join(BASE_DIR, 'schedule_airport.csv'))
+df_schedule = pd.read_csv(os.path.join(BASE_DIR, 'schedule_airport.csv'), sep=',', index_col=0)
 
-# --- 2. DATA VOORBEREIDEN ---
-# Tel het aantal vluchten per ICAO code
+# --- 2. CO2 CONFIGURATIE ---
+LAT_HOME = 47.4647
+LON_HOME = 8.5492
+
+co2_factors = {
+    'A319': 5.5,
+    'A320': 6.0,
+    'A321': 6.5,
+    'A21N': 5.5,
+    'B763': 15.0,
+    'A359': 18.0,
+}
+RADIATIVE_FORCING_INDEX = 2.0
+
+# --- 3. DATA VOORBEREIDEN ---
+# Tel het aantal vluchten per luchthaven
 flight_counts = df_schedule.groupby('Org/Des').size().reset_index(name='Aantal_Vluchten')
 
 # Haal het meest voorkomende vliegtuigtype per luchthaven op
 act_per_airport = (
     df_schedule.groupby('Org/Des')['ACT']
-    .agg(lambda x: x.value_counts().index[0])  # meest voorkomende ACT
+    .agg(lambda x: x.value_counts().index[0])
     .reset_index()
 )
+
+
+
 
 # Voeg toe aan df_map
 df_map = pd.merge(df_map, act_per_airport, left_on='ICAO', right_on='Org/Des', how='left')
