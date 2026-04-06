@@ -9,20 +9,24 @@ st.set_page_config(page_title="Vluchtactiviteit & Klimaat", layout="wide")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+
 # --- 1. DATA INLADEN ---
-# Gebruik @st.cache_data zodat de zware data niet bij elke slider-beweging opnieuw laadt
 @st.cache_data
 def load_data():
     df_airports = pd.read_csv(os.path.join(BASE_DIR, 'airports-extended-clean.csv'), sep=';', decimal=',')
+    
+    # Let op: index_col=0 is hier weggehaald!
     df_schedule = pd.read_csv(
         os.path.join(BASE_DIR, 'schedule_airport.csv'),
         sep=',',
-        index_col=0,
-        encoding='utf-8-sig'
+        encoding='utf-8-sig'  
     )
-    # Zet de STD (datum) kolom om naar echte datetime objecten
+    
+    # Nu kan Pandas de kolom 'STD' wel gewoon vinden
     df_schedule['Datum'] = pd.to_datetime(df_schedule['STD'], dayfirst=True).dt.date
+    
     return df_airports, df_schedule
+
 
 df_airports, df_schedule = load_data()
 
