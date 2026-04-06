@@ -43,11 +43,12 @@ act_per_airport = (
     .reset_index()
 )
 
+# STAP 1: maak df_map aan
+df_map = pd.merge(df_airports, flight_counts, left_on='ICAO', right_on='Org/Des', how='inner')
 
-
-
-# Voeg toe aan df_map
+# STAP 2: voeg vliegtuigtype toe aan de al bestaande df_map
 df_map = pd.merge(df_map, act_per_airport, left_on='ICAO', right_on='Org/Des', how='left')
+
 
 # Nu werkt dit wel:
 df_map['CO2_Factor'] = df_map['ACT'].map(co2_factors).fillna(7.0)
