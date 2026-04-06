@@ -129,10 +129,7 @@ with col3:
 
 st.write("") # Extra witruimte
 
-# Twee grafieken naast elkaar zetten
-col_a, col_b = st.columns(2)
 
-with col_a:
     # Staafdiagram meest vervuilende routes (Voorstel 1)
     st.subheader("Top 10 Routes (Totale Uitstoot)")
     top_10_co2 = df_map.nlargest(10, 'Total_Climate_Impact_CO2e_Ton')
@@ -149,7 +146,7 @@ with col_a:
     fig_co2_bar.update_layout(yaxis={'categoryorder':'total ascending'})
     st.plotly_chart(fig_co2_bar, use_container_width=True)
 
-with col_b:
+
     # Treemap per land (Voorstel 2)
     st.subheader("Uitstootverdeling Wereldwijd")
     # Zorg dat lege landen de grafiek niet breken
