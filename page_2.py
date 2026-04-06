@@ -150,7 +150,7 @@ display_df['CO2_Emission_kg'] = display_df['Distance_km'] * display_df['CO2_Fact
 display_df['Climate_Impact_CO2e_kg'] = display_df['CO2_Emission_kg'] * RADIATIVE_FORCING_INDEX
 
 
-
+st.write(df_map.columns.tolist())
 
 
 
