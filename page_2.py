@@ -15,6 +15,11 @@ st.write(os.listdir(BASE_DIR))  # toont alle bestanden in de map
 
 st.write(os.path.getsize(os.path.join(BASE_DIR, 'schedule_airport.csv')))
 
+df_schedule = pd.read_csv(
+    os.path.join(BASE_DIR, 'schedule_airport.csv'),
+    sep=',',
+    index_col=0  # de eerste lege kolom is de index
+)
 
 # --- 1. DATA INLADEN ---
 # We laden de data één keer in voor de hele pagina
