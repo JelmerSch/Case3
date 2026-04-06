@@ -6,9 +6,17 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+
+
 # --- 1. DATA INLADEN ---
 df_airports = pd.read_csv(os.path.join(BASE_DIR, 'airports-extended-clean.csv'), sep=';', decimal=',')
-df_schedule = pd.read_csv(os.path.join(BASE_DIR, 'schedule_airport.csv'), sep=',', index_col=0)
+df_schedule = pd.read_csv(
+    os.path.join(BASE_DIR, 'schedule_airport.csv'),
+    sep=',',
+    index_col=0,
+    encoding='utf-8-sig'  # fix voor BOM-karakter
+)
+
 
 # --- 2. CO2 CONFIGURATIE ---
 LAT_HOME = 47.4647
