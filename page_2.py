@@ -4,8 +4,10 @@ import plotly.express as px
 import numpy as np
 import os
 
-# Voeg dit bovenaan je bestand toe
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+st.write(os.listdir(BASE_DIR))  # toont alle bestanden in de map
+
 
 # --- 1. DATA INLADEN ---
 # We laden de data één keer in voor de hele pagina
