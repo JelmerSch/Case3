@@ -118,12 +118,11 @@ for df in list(flights_30s.values()) + list(flights_1s.values()):
 max_snelheid = max(alle_max_snelheden) if alle_max_snelheden else 0
 
 col_m1, col_m2, col_m3, col_m4, col_m5 = st.columns(5)
-col_m1.metric("⏱️ Gemiddelde vluchtduur",  f"{duur_min}m {duur_sec}s")
+col_m1.metric("⏱️ Gemiddelde vluchtduur",   f"{duur_min}m {duur_sec}s")
 col_m2.metric("⚡ Snelste vluchtduur",      f"{snelste_min}m {snelste_sec}s")
 col_m3.metric("💨 Gemiddelde snelheid",     f"{gem_snelh:.1f} km/h")
-col_m4.metric("🏔️ Max. behaalde hoogte",   f"{max_hoogte:.0f} m")
-col_m5.metric("🚀 Max. snelheid",           f"{max_snelheid:.1f} km/h")
-
+col_m4.metric("🚀 Max. snelheid",           f"{max_snelheid:.1f} km/h")
+col_m5.metric("🏔️ Max. behaalde hoogte",    f"{max_hoogte:.0f} m")
 st.divider()
 
 ######################
