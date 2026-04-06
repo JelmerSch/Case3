@@ -9,6 +9,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 st.write(os.listdir(BASE_DIR))  # toont alle bestanden in de map
 
 
+st.write(os.path.getsize(os.path.join(BASE_DIR, 'schedule_airport.csv')))
+
 # --- 1. DATA INLADEN ---
 # We laden de data één keer in voor de hele pagina
 df_airports = pd.read_csv(os.path.join(BASE_DIR, 'airports-extended-clean.csv'), sep=';', decimal=',')
