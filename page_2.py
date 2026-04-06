@@ -16,6 +16,20 @@ df_schedule = pd.read_csv(os.path.join(BASE_DIR, 'schedule_airport.csv'))
 # Tel het aantal vluchten per ICAO code
 flight_counts = df_schedule.groupby('Org/Des').size().reset_index(name='Aantal_Vluchten')
 
+# Haal het meest voorkomende vliegtuigtype per luchthaven op
+act_per_airport = (
+    df_schedule.groupby('Org/Des')['ACT']
+    .agg(lambda x: x.value_counts().index[0])  # meest voorkomende ACT
+    .reset_index()
+)
+
+# Voeg toe aan df_map
+df_map = pd.merge(df_map, act_per_airport, left_on='ICAO', right_on='Org/Des', how='left')
+
+# Nu werkt dit wel:
+df_map['CO2_Factor'] = df_map['ACT'].map(co2_factors).fillna(7.0)
+
+
 # Koppel de tellingen aan de vliegveld-informatie (naam, lat, lon)
 # We gebruiken 'inner' om alleen vliegvelden te tonen die in het schema staan
 df_map = pd.merge(df_airports, flight_counts, left_on='ICAO', right_on='Org/Des', how='inner')
