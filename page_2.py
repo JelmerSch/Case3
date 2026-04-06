@@ -53,10 +53,8 @@ df_map = pd.merge(df_map, act_per_airport, left_on='ICAO', right_on='Org/Des', h
 # Nu werkt dit wel:
 df_map['CO2_Factor'] = df_map['ACT'].map(co2_factors).fillna(7.0)
 
+st.write(df_map.columns.tolist())
 
-# Koppel de tellingen aan de vliegveld-informatie (naam, lat, lon)
-# We gebruiken 'inner' om alleen vliegvelden te tonen die in het schema staan
-df_map = pd.merge(df_airports, flight_counts, left_on='ICAO', right_on='Org/Des', how='inner')
 
 # --- 3. BUBBEL DIAGRAM (Alle vluchten) ---
 st.title("Wereldwijde Vluchtactiviteit")
@@ -150,7 +148,6 @@ display_df['CO2_Emission_kg'] = display_df['Distance_km'] * display_df['CO2_Fact
 display_df['Climate_Impact_CO2e_kg'] = display_df['CO2_Emission_kg'] * RADIATIVE_FORCING_INDEX
 
 
-st.write(df_map.columns.tolist())
 
 
 
