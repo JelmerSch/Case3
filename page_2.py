@@ -135,17 +135,8 @@ df_map['Climate_Impact_CO2e_kg'] = df_map['CO2_Emission_kg'] * RADIATIVE_FORCING
 
 
 
-# Map de factoren, vul onbekende types met een gemiddelde (bijv. 7.0 kg/km)
-display_df['CO2_Factor'] = display_df['ACT'].map(co2_factors).fillna(7.0)
 
-# 3. Bereken de klimaatimpact
-RADIATIVE_FORCING_INDEX = 2.0 # Verdubbelaar voor de impact op grote hoogte
 
-# Absolute CO2 in kg
-display_df['CO2_Emission_kg'] = display_df['Distance_km'] * display_df['CO2_Factor']
-
-# Totale klimaatimpact (CO2e)
-display_df['Climate_Impact_CO2e_kg'] = display_df['CO2_Emission_kg'] * RADIATIVE_FORCING_INDEX
 
 
 
