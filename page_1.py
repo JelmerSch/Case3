@@ -423,7 +423,7 @@ st.divider()
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("Hoogte per vlucht (30 sec)")
+    st.subheader("Hoogte per vlucht")
     fig_hoogte = go.Figure()
 
     for i, (naam, df) in enumerate(flights_30s.items()):
@@ -455,7 +455,7 @@ with col1:
     st.plotly_chart(fig_hoogte, use_container_width=True)
 
 with col2:
-    st.subheader("Snelheid per vlucht (30 sec)")
+    st.subheader("Snelheid per vlucht")
     fig_snelheid = go.Figure()
 
     for i, (naam, df) in enumerate(flights_30s.items()):
