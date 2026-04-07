@@ -276,8 +276,8 @@ with tab_animatie:
             fig_2d.update_layout(
                 mapbox=dict(
                     style="open-street-map",
-                    center=dict(lat=np.mean(lats), lon=np.mean(lons)),
-                    zoom=5,
+                    center=dict(lat=46.0, lon=3.5),
+                    zoom=4,
                 ),
                 updatemenus=[dict(
                     type="buttons", showactive=False,
