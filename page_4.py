@@ -18,7 +18,7 @@ initialize_data()
 flights_raw = st.session_state.get("flights", {})
 airports = st.session_state.get("airports", pd.DataFrame())
 
-# 👉 Airport label maken (naam + stad + land)
+# Airport label maken (naam + stad + land)
 if not airports.empty:
     airports["label"] = (
         airports["Name"].astype(str) + " (" +
@@ -140,6 +140,227 @@ df = build_features(df_raw)
 ######################
 
 st.title("Vertragingsanalyse & Regressie")
+
+######################
+### 1. Overzicht    ###
+######################
+
+st.subheader("Overzicht vertraging")
+
+totaal     = len(df)
+on_time    = (df["delay_cat"] == "On time").sum()
+small_del  = (df["delay_cat"] == "Small delay").sum()
+large_del  = (df["delay_cat"] == "Large delay").sum()
+gem_vertr  = df["vertraging_min"].mean()
+med_vertr  = df["vertraging_min"].median()
+
+c1, c2, c3, c4, c5, c6 = st.columns(6)
+c1.metric("Totaal vluchten",   f"{totaal:,}")
+c2.metric("✅ On time",         f"{on_time:,}",   f"{on_time/totaal*100:.1f}%")
+c3.metric("🟡 Small delay",    f"{small_del:,}",  f"{small_del/totaal*100:.1f}%")
+c4.metric("🔴 Large delay",    f"{large_del:,}",  f"{large_del/totaal*100:.1f}%")
+c5.metric("📊 Gem. vertraging", f"{gem_vertr:.1f} min")
+c6.metric("📈 Mediaan",         f"{med_vertr:.1f} min")
+
+st.divider()
+######################
+### 2. Grafieken   ###
+######################
+
+col_g1, col_g2 = st.columns(2)
+
+with col_g1:
+    st.subheader("Verdeling vertragingscategorieën")
+    cat_counts = df["delay_cat"].value_counts().reindex(
+        ["On time", "Small delay", "Large delay"]
+    )
+    fig_pie = go.Figure(go.Pie(
+        labels=cat_counts.index,
+        values=cat_counts.values,
+        marker=dict(colors=["#2ca02c", "#ff7f0e", "#d62728"]),
+        hole=0.4,
+        textinfo="percent+label",
+    ))
+    fig_pie.update_layout(height=350, margin=dict(l=0, r=0, t=10, b=0),
+                          showlegend=False)
+    st.plotly_chart(fig_pie, use_container_width=True)
+
+with col_g2:
+    st.subheader("Vertraging per uur van de dag")
+    if "uur" in df.columns:
+        uur_gem = (
+            df.groupby("uur")["vertraging_min"]
+            .mean()
+            .reset_index()
+            .rename(columns={"vertraging_min": "gem_vertraging"})
+        )
+        fig_uur = go.Figure(go.Bar(
+            x=uur_gem["uur"],
+            y=uur_gem["gem_vertraging"],
+            marker_color="#1f77b4",
+        ))
+        fig_uur.update_layout(
+            xaxis_title="Uur van de dag",
+            yaxis_title="Gem. vertraging (min)",
+            height=350,
+            margin=dict(l=40, r=20, t=10, b=40),
+        )
+        st.plotly_chart(fig_uur, use_container_width=True)
+
+# Histogram vertraging (geclipt voor leesbaarheid)
+st.subheader("Histogram vertraging (−30 t/m +120 min)")
+df_clip = df[df["vertraging_min"].between(-30, 120)]
+fig_hist = px.histogram(
+    df_clip, x="vertraging_min", nbins=60,
+    color="delay_cat",
+    color_discrete_map={
+        "On time":     "#2ca02c",
+        "Small delay": "#ff7f0e",
+        "Large delay": "#d62728",
+    },
+    labels={"vertraging_min": "Vertraging (min)", "delay_cat": "Categorie"},
+)
+fig_hist.update_layout(
+    height=350,
+    margin=dict(l=40, r=20, t=10, b=40),
+    bargap=0.05,
+    legend_title="Categorie",
+)
+st.plotly_chart(fig_hist, use_container_width=True)
+
+st.divider()
+######################
+### 3. Regressie   ###
+######################
+
+st.subheader("Lineaire regressie – vertraging voorspellen")
+
+# Beschikbare features
+ALLE_FEATURES = {
+    "Uur van de dag":        "uur",
+    "Inbound / Outbound":    "is_inbound",
+    "Vliegtuigtype":         "actype_code",
+    "Runway":                "rwy_code",
+    "Bestemming/afkomst":    "dest_code",
+    "Dag van de week":       "dag_vd_week",
+    "Maand":                 "maand",
+    "Dag van de maand":      "dag_vd_maand",
+}
+
+# Alleen features tonen die daadwerkelijk in df zitten
+beschikbare = {
+    label: col
+    for label, col in ALLE_FEATURES.items()
+    if col in df.columns
+}
+
+with st.expander("⚙️ Instellingen regressie", expanded=True):
+    gekozen_labels = st.multiselect(
+        "Kies de features voor het model:",
+        options=list(beschikbare.keys()),
+        default=list(beschikbare.keys()),
+    )
+    test_size = st.slider("Testset grootte (%)", 10, 40, 20, step=5)
+    target_col = st.radio(
+        "Doelvariabele:",
+        ["Vertraging in minuten (regressie)", "Vertragingscategorie (0/1/2)"],
+        horizontal=True,
+    )
+
+if not gekozen_labels:
+    st.warning("Selecteer minimaal één feature.")
+    st.stop()
+
+gekozen_cols = [beschikbare[l] for l in gekozen_labels]
+y_col = "vertraging_min" if "minuten" in target_col else "delay_code"
+
+df_model = df[gekozen_cols + [y_col]].dropna()
+
+if len(df_model) < 50:
+    st.error("Te weinig rijen na cleaning om een model te trainen.")
+    st.stop()
+
+X = df_model[gekozen_cols].values
+y = df_model[y_col].values
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=test_size / 100, random_state=42
+)
+
+model = LinearRegression()
+model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
+
+mae  = mean_absolute_error(y_test, y_pred)
+rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+r2   = r2_score(y_test, y_pred)
+
+######################
+### 4. Resultaten  ###
+######################
+
+st.subheader("Modelresultaten")
+
+m1, m2, m3, m4 = st.columns(4)
+m1.metric("R² score",   f"{r2:.3f}")
+m2.metric("MAE",        f"{mae:.2f} min")
+m3.metric("RMSE",       f"{rmse:.2f} min")
+m4.metric("Trainrijen", f"{len(X_train):,}")
+
+# Actual vs Predicted scatter
+col_r1, col_r2 = st.columns(2)
+
+with col_r1:
+    st.markdown("**Werkelijk vs. voorspeld**")
+    sample_n = min(500, len(y_test))
+    idx = np.random.choice(len(y_test), sample_n, replace=False)
+    fig_scatter = go.Figure()
+    fig_scatter.add_trace(go.Scatter(
+        x=y_test[idx], y=y_pred[idx],
+        mode="markers",
+        marker=dict(size=4, color="#1f77b4", opacity=0.5),
+        name="Voorspelling",
+    ))
+    # Ideale lijn
+    mn, mx = float(y_test.min()), float(y_test.max())
+    fig_scatter.add_trace(go.Scatter(
+        x=[mn, mx], y=[mn, mx],
+        mode="lines",
+        line=dict(color="red", dash="dash", width=1),
+        name="Ideaal",
+    ))
+    fig_scatter.update_layout(
+        xaxis_title="Werkelijke vertraging",
+        yaxis_title="Voorspelde vertraging",
+        height=380,
+        margin=dict(l=40, r=20, t=10, b=40),
+    )
+    st.plotly_chart(fig_scatter, use_container_width=True)
+
+with col_r2:
+    st.markdown("**Feature importantie (coëfficiënten)**")
+    coef_df = pd.DataFrame({
+        "Feature":     gekozen_labels,
+        "Coëfficiënt": model.coef_,
+    }).sort_values("Coëfficiënt", key=abs, ascending=True)
+
+    fig_coef = go.Figure(go.Bar(
+        x=coef_df["Coëfficiënt"],
+        y=coef_df["Feature"],
+        orientation="h",
+        marker_color=[
+            "#d62728" if c > 0 else "#1f77b4"
+            for c in coef_df["Coëfficiënt"]
+        ],
+    ))
+    fig_coef.update_layout(
+        xaxis_title="Coëfficiënt (effect op vertraging)",
+        height=380,
+        margin=dict(l=10, r=20, t=10, b=40),
+    )
+    st.plotly_chart(fig_coef, use_container_width=True)
+
+st.divider()
 
 ######################
 ### Model
