@@ -159,7 +159,7 @@ with tab3:
     with col_a:
         st.subheader("Top 10 Bestemmingen")
         top_dest = display_df['Name'].value_counts().head(10)
-        fig_top = plt.figure(figsize=(10, 5))
+        fig_top, ax_top = plt.subplots(figsize=(10, 5))
         sns.barplot(x=top_dest.values, y=top_dest.index, palette='Blues_r')
         plt.xlabel("Aantal vluchten")
         plt.ylabel("")
@@ -168,7 +168,7 @@ with tab3:
     with col_b: 
         st.subheader("Vlootsamenstelling")
         fleet = display_df['ACT'].value_counts().head(10)
-        fig_fleet = plt.figure(figsize=(10, 5))
+        fig_fleet, ax_fleet = plt.subplots(figsize=(10, 5))
         sns.barplot(x=fleet.values, y=fleet.index, palette='Greens_r')
         plt.xlabel("Aantal vluchten")
         plt.ylabel("type vliegtuig")
