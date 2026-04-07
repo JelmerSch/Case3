@@ -344,7 +344,8 @@ with col_r1:
     """)
     sample_n = min(500, len(y_test))
     idx = np.random.choice(len(y_test), sample_n, replace=False)
-
+    
+    # 1. De scatterpunten
     fig_scatter = go.Figure()
     fig_scatter.add_trace(go.Scatter(
         x=y_test[idx], y=y_pred[idx],
@@ -353,21 +354,32 @@ with col_r1:
         name="Voorspelling",
     ))
 
-    # Ideale lijn: altijd minstens tot 200, anders tot het max van de data
+    # 2. De Ideale lijn (y=x)
     lijn_max = max(200, float(y_test.max()), float(y_pred.max()))
     lijn_min = min(0, float(y_test.min()), float(y_pred.min()))
     fig_scatter.add_trace(go.Scatter(
         x=[lijn_min, lijn_max], y=[lijn_min, lijn_max],
         mode="lines",
         line=dict(color="red", dash="dash", width=1),
-        name="Ideaal",
+        name="Ideaal (y=x)",
+    ))
+
+    # 3. De Model Regressielijn (Trendlijn)
+    # We fitten een simpele lijn door de test-resultaten om de afwijking te zien
+    reg_line_model = LinearRegression().fit(y_test.reshape(-1, 1), y_pred)
+    y_reg_line = reg_line_model.predict(np.array([lijn_min, lijn_max]).reshape(-1, 1))
+    
+    fig_scatter.add_trace(go.Scatter(
+        x=[lijn_min, lijn_max], y=y_reg_line,
+        mode="lines",
+        line=dict(color="orange", width=2),
+        name="Model Trend",
     ))
 
     fig_scatter.update_layout(
         xaxis=dict(title="Werkelijke vertraging (min)", range=[lijn_min, 200]),
         yaxis=dict(title="Voorspelde vertraging (min)", range=[lijn_min, 200]),
         height=380,
-        margin=dict(l=40, r=20, t=10, b=40),
     )
     st.plotly_chart(fig_scatter, use_container_width=True)
 
