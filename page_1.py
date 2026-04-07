@@ -60,15 +60,7 @@ flights_30s = {naam: clean_flight(df) for naam, df in flights_30s_raw.items()}
 
 KNOTS_TO_KMH = 1.852
 
-COLORS_DARK = [
-    "#1f77b4",
-    "#ff7f0e",
-    "#2ca02c",
-    "#d62728",
-    "#9467bd",
-    "#8c564b",
-    "#e377c2",
-]
+COLORS_DARK = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2"]
 
 ######################
 ### Pagina-inhoud  ###
@@ -123,7 +115,7 @@ st.divider()
 
 st.subheader("Vliegroutes & Heading")
 
-tab_kaart, tab_polar, tab_animatie = st.tabs(["🗺️ Kaart", "🧭 Polar / Heading", "▶️ Animatie"])
+tab_kaart, tab_animatie = st.tabs(["🗺️ Kaart", "▶️ Animatie"])
 
 # ──────────────────────────────────────────────
 # TAB 1 — Kaart
@@ -164,96 +156,7 @@ with tab_kaart:
     st.plotly_chart(fig_kaart, use_container_width=True)
 
 # ──────────────────────────────────────────────
-# TAB 2 — Polar / Heading
-# ──────────────────────────────────────────────
-with tab_polar:
-    st.markdown(
-        "De polar chart toont hoe vaak het vliegtuig in een bepaalde richting vloog. "
-        "Elke richting is opgedeeld in segmenten van 10°. "
-        "Hoe verder een segment naar buiten steekt, hoe vaker die heading voorkwam."
-    )
-
-    # Detecteer heading-kolom (naam kan variëren per export)
-    HEADING_KANDIDATEN = [
-        "[3d Heading]",
-        "Magnetic Heading (derived)",
-        "True Heading (derived)",
-        "Heading (deg)",
-        "[Heading]",
-        "HEADING (derived)",
-    ]
-
-    heading_col = None
-    for df in flights_30s.values():
-        for kandidaat in HEADING_KANDIDATEN:
-            if kandidaat in df.columns:
-                heading_col = kandidaat
-                break
-        if heading_col:
-            break
-
-    if heading_col is None:
-        st.warning(
-            "Geen heading-kolom gevonden. Controleer of de kolom aanwezig is in de Excel-bestanden. "
-            f"Verwachte kolomnamen: {HEADING_KANDIDATEN}"
-        )
-    else:
-        BINS      = 36          # 360° / 10° = 36 segmenten
-        BIN_SIZE  = 360 / BINS
-        bin_edges = np.linspace(0, 360, BINS + 1)
-        bin_mids  = bin_edges[:-1] + BIN_SIZE / 2  # middelpunt van elk segment
-
-        fig_polar = go.Figure()
-
-        for i, (naam, df) in enumerate(flights_30s.items()):
-            kleur = COLORS_DARK[i % len(COLORS_DARK)]
-            if heading_col not in df.columns:
-                continue
-
-            heading_vals = pd.to_numeric(df[heading_col], errors="coerce").dropna()
-            counts, _    = np.histogram(heading_vals, bins=bin_edges)
-
-            fig_polar.add_trace(go.Barpolar(
-                r=counts,
-                theta=bin_mids,
-                width=[BIN_SIZE] * BINS,
-                name=naam,
-                marker=dict(
-                    color=kleur,
-                    opacity=0.75,
-                    line=dict(color="white", width=0.5),
-                ),
-                hovertemplate=(
-                    "<b>%{fullData.name}</b><br>"
-                    "Richting: %{theta:.0f}°<br>"
-                    "Aantal meetpunten: %{r}<extra></extra>"
-                ),
-            ))
-
-        fig_polar.update_layout(
-            polar=dict(
-                angularaxis=dict(
-                    tickmode="array",
-                    tickvals=[0, 45, 90, 135, 180, 225, 270, 315],
-                    ticktext=["N", "NE", "O", "ZO", "Z", "ZW", "W", "NW"],
-                    direction="clockwise",
-                    rotation=90,       # 0° = Noord bovenaan
-                ),
-                radialaxis=dict(
-                    showticklabels=True,
-                    tickfont=dict(size=10),
-                ),
-            ),
-            legend_title="Vlucht",
-            height=550,
-            margin=dict(l=40, r=40, t=40, b=40),
-            bargap=0,
-        )
-
-        st.plotly_chart(fig_polar, use_container_width=True)
-
-# ──────────────────────────────────────────────
-# TAB 3 — Animatie
+# TAB 2 — Animatie
 # ──────────────────────────────────────────────
 with tab_animatie:
     st.markdown(
@@ -343,8 +246,8 @@ with tab_animatie:
         fig_anim.update_layout(
             mapbox=dict(
                 style="open-street-map",
-                center=dict(lat=np.mean(lats), lon=np.mean(lons)),
-                zoom=5,
+                center=dict(lat=46.0, lon=3.5),
+                zoom=4.4,
             ),
             updatemenus=[
                 dict(
