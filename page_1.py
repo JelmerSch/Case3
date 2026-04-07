@@ -191,82 +191,55 @@ with tab_animatie:
         # ── sub-tabs ──
         sub_2d, sub_3d = st.tabs(["🗺️ 2D animatie", "🏔️ 3D hoogteprofiel"])
 
-        with sub_2d:
-            frames_2d = []
-            for i in range(1, len(lats) + 1):
-                hover_parts = [f"<b>{gekozen_naam}</b>"]
-                if heeft_tijd:
-                    t = df_anim["Time (secs)"].iloc[i - 1]
-                    hover_parts.append(f"Tijd: {int(t)} sec")
-                if heeft_hoogte:
-                    h = df_anim["[3d Altitude M]"].iloc[i - 1]
-                    hover_parts.append(f"Hoogte: {h:.0f} m")
-                if heeft_snelheid:
-                    s = df_anim["TRUE AIRSPEED (derived)"].iloc[i - 1] * KNOTS_TO_KMH
-                    hover_parts.append(f"Snelheid: {s:.1f} km/h")
-                if heeft_heading:
-                    hdg = df_anim["[3d Heading]"].iloc[i - 1]
-                    hover_parts.append(f"Heading: {hdg:.0f}°")
-                hover_tekst = "<br>".join(hover_parts) + "<extra></extra>"
+with sub_2d:
+    frames_2d = []
+    for i in range(1, len(lats) + 1):
+        hover_parts = [f"<b>{gekozen_naam}</b>"]
+        if heeft_tijd:
+            t = df_anim["Time (secs)"].iloc[i - 1]
+            hover_parts.append(f"Tijd: {int(t)} sec")
+        if heeft_hoogte:
+            h = df_anim["[3d Altitude M]"].iloc[i - 1]
+            hover_parts.append(f"Hoogte: {h:.0f} m")
+        if heeft_snelheid:
+            s = df_anim["TRUE AIRSPEED (derived)"].iloc[i - 1] * KNOTS_TO_KMH
+            hover_parts.append(f"Snelheid: {s:.1f} km/h")
+        if heeft_heading:
+            hdg = df_anim["[3d Heading]"].iloc[i - 1]
+            hover_parts.append(f"Heading: {hdg:.0f}°")
+        hover_tekst = "<br>".join(hover_parts) + "<extra></extra>"
 
-                # Heading-pijl berekenen
-                if heeft_heading:
-                    hdg_val = pd.to_numeric(
-                        df_anim["[3d Heading]"].iloc[i - 1], errors="coerce"
-                    )
-                    if pd.notna(hdg_val):
-                        dlat, dlon = heading_offset(hdg_val)
-                        pijl_lats = [lats[i - 1], lats[i - 1] + dlat]
-                        pijl_lons = [lons[i - 1], lons[i - 1] + dlon]
-                    else:
-                        pijl_lats = [lats[i - 1], lats[i - 1]]
-                        pijl_lons = [lons[i - 1], lons[i - 1]]
-                else:
-                    pijl_lats = [lats[i - 1], lats[i - 1]]
-                    pijl_lons = [lons[i - 1], lons[i - 1]]
+        frame_data = [
+            # Staart
+            go.Scattermapbox(
+                lat=lats[:i], lon=lons[:i],
+                mode="lines",
+                line=dict(width=2, color=kleur_anim),
+                hoverinfo="skip", showlegend=False,
+            ),
+            # Vliegtuig-positie (gewone stip)
+            go.Scattermapbox(
+                lat=[lats[i - 1]], lon=[lons[i - 1]],
+                mode="markers",
+                marker=dict(size=14, color=kleur_anim, symbol="circle"),
+                name=gekozen_naam,
+                hovertemplate=hover_tekst,
+                showlegend=False,
+            ),
+        ]
+        frames_2d.append(go.Frame(data=frame_data, name=str(i)))
 
-                frame_data = [
-                    # Staart
-                    go.Scattermapbox(
-                        lat=lats[:i], lon=lons[:i],
-                        mode="lines",
-                        line=dict(width=2, color=kleur_anim),
-                        hoverinfo="skip", showlegend=False,
-                    ),
-                    # Vliegtuig-positie
-                    go.Scattermapbox(
-                        lat=[lats[i - 1]], lon=[lons[i - 1]],
-                        mode="markers",
-                        marker=dict(size=14, color=kleur_anim, symbol="airport"),
-                        name=gekozen_naam,
-                        hovertemplate=hover_tekst,
-                        showlegend=False,
-                    ),
-                    # Heading-pijl (oranje, dun)
-                    go.Scattermapbox(
-                        lat=pijl_lats, lon=pijl_lons,
-                        mode="lines",
-                        line=dict(width=3, color="#FF6B00"),
-                        hoverinfo="skip", showlegend=False,
-                    ),
-                ]
-                frames_2d.append(go.Frame(data=frame_data, name=str(i)))
-
-            fig_2d = go.Figure(
-                data=[
-                    go.Scattermapbox(lat=[lats[0]], lon=[lons[0]], mode="lines",
-                                     line=dict(width=2, color=kleur_anim),
-                                     hoverinfo="skip", showlegend=False),
-                    go.Scattermapbox(lat=[lats[0]], lon=[lons[0]], mode="markers",
-                                     marker=dict(size=14, color=kleur_anim, symbol="airport"),
-                                     showlegend=False),
-                    go.Scattermapbox(lat=[lats[0], lats[0]], lon=[lons[0], lons[0]],
-                                     mode="lines",
-                                     line=dict(width=3, color="#FF6B00"),
-                                     hoverinfo="skip", showlegend=False),
-                ],
-                frames=frames_2d,
-            )
+    fig_2d = go.Figure(
+        data=[
+            go.Scattermapbox(lat=[lats[0]], lon=[lons[0]], mode="lines",
+                             line=dict(width=2, color=kleur_anim),
+                             hoverinfo="skip", showlegend=False),
+            go.Scattermapbox(lat=[lats[0]], lon=[lons[0]], mode="markers",
+                             marker=dict(size=14, color=kleur_anim, symbol="circle"),
+                             showlegend=False),
+        ],
+        frames=frames_2d,
+    )
 
             fig_2d.update_layout(
                 mapbox=dict(
