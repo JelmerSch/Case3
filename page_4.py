@@ -23,11 +23,11 @@ flights_raw = st.session_state.get("flights", {})
 airports = st.session_state.get("airports", pd.DataFrame())
 
 # Maak een map van IATA-code naar volledige luchthavennaam
-iata_to_full_name = {}
+icao_to_full_name = {}
 if not airports.empty:
-    # Zorg dat de kolommen 'IATA' en 'Name' bestaan
-    if "IATA" in airports.columns and "Name" in airports.columns:
-        iata_to_full_name = airports.set_index("IATA")["Name"].to_dict()
+    # Zorg dat de kolommen 'ICAO' en 'Name' bestaan
+    if "ICAO" in airports.columns and "Name" in airports.columns:
+        iata_to_full_name = airports.set_index("ICAO")["Name"].to_dict()
 
 # Zoek het juiste CSV-bestand in de flights_raw dictionary (bijv. "schedule_airport")
 schedule_key = None
@@ -135,7 +135,7 @@ def build_features(df: pd.DataFrame, airports_mapping) -> pd.DataFrame:
     return df
 
 # Bouw de features
-df = build_features(df_raw, iata_to_full_name)
+df = build_features(df_raw, icao_to_full_name)
 
 ######################
 ### UI - Hoofdpagina
