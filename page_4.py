@@ -59,8 +59,8 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
 
     # ── 1. Vertraging berekenen ──────────────────────────────────────────
     # Geplande tijd → minuten
-    df["gepland_min"]   = parse_time_col(df["STA_STD_Itc"])
-    df["werkelijk_min"] = parse_time_col(df["ATA_ATD_Itc"])
+    df["gepland_min"]   = parse_time_col(df["STA_STD_ltc"])
+    df["werkelijk_min"] = parse_time_col(df["ATA_ATD_ltc"])
 
     # Vertraging in minuten (werkelijk - gepland); negatief = vroeger
     df["vertraging_min"] = df["werkelijk_min"] - df["gepland_min"]
