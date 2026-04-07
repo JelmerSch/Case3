@@ -127,6 +127,7 @@ with tab2:
     nl_order = ['maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag', 'zondag']
 
     translation = dict(zip(order, nl_order))
+    day_data.index = day_data.index.map(translation)
     
     delay_day = (
         display_df[display_df['Delay_min'] > 0]
@@ -134,7 +135,7 @@ with tab2:
         .mean()
         .reindex(order)
     )
-    day_data.index = day_data.index.map(translation)
+    
     fig_day2 = plt.figure(figsize=(10, 4))
     sns.barplot(x=delay_day.index, y=delay_day.values, palette='coolwarm')
     plt.xticks(rotation=45)
