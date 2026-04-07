@@ -86,7 +86,9 @@ with tab1:
 
 with tab2:
     st.header("Vertragingsanalyse")
+    col_a, col_b = st.columns(2)
 
+    with col_a:
     st.subheader("Verdeling van Vertragingen (tot 120 min)")
     fig_hist = plt.figure(figsize=(10, 4))
     sns.histplot(
@@ -97,6 +99,7 @@ with tab2:
     st.pyplot(fig_hist)
 
     # FIX 2: dubbele/drievoudige st.subheader regels verwijderd, enkel één gehouden
+    with col_b:
     st.subheader("Gemiddelde Vertraging per Bestemming")
     delay_dest = (
         display_df[display_df['Delay_min'] > 0]
@@ -126,8 +129,12 @@ with tab2:
     st.pyplot(fig_day2)
 
 with tab3:
-    st.header("Vloot & Bestemmingen")
+
     
+    st.header("Vloot & Bestemmingen")
+    col_a, col_b = st.columns(2)
+    
+    with col_a:
     st.subheader("Top 10 Bestemmingen")
     top_dest = display_df['Name'].value_counts().head(10)
     fig_top = plt.figure(figsize=(10, 5))
@@ -136,6 +143,7 @@ with tab3:
     plt.ylabel("")
     st.pyplot(fig_top)
 
+    with col_b: 
     st.subheader("Vlootsamenstelling")
     fleet = display_df['ACT'].value_counts().head(10)
     fig_fleet = plt.figure(figsize=(10, 5))
