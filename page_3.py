@@ -78,10 +78,11 @@ with tab1:
     with col_b:
         st.subheader("Volume per Dag")
         fig_day = plt.figure(figsize=(10, 5))
-        order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        order = ['maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag', 'zondag']
         day_data = display_df['Day_of_Week'].value_counts().reindex(order)
         sns.barplot(x=day_data.index, y=day_data.values, palette='coolwarm')
         plt.xticks(rotation=45)
+        plt.xlabel("Dag van de week")
         st.pyplot(fig_day)
 
 with tab2:
@@ -95,6 +96,7 @@ with tab2:
         display_df[(display_df['Delay_min'] > 0) & (display_df['Delay_min'] < 120)]['Delay_min'],
         bins=40, kde=True, color='purple')
         plt.xlabel("Minuten te laat")
+        plt.ylabel("Aantal")
         st.pyplot(fig_hist)
 
     # FIX 2: dubbele/drievoudige st.subheader regels verwijderd, enkel één gehouden
@@ -114,7 +116,7 @@ with tab2:
         st.pyplot(fig_dest)
 
     st.subheader("Gemiddelde Vertraging per Dag van de Week")
-    order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    order = ['maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag', 'zondag']
     delay_day = (
         display_df[display_df['Delay_min'] > 0]
         .groupby('Day_of_Week')['Delay_min']
@@ -125,6 +127,7 @@ with tab2:
     sns.barplot(x=delay_day.index, y=delay_day.values, palette='coolwarm')
     plt.xticks(rotation=45)
     plt.ylabel("Gem. vertraging (min)")
+    plt.xlabel("Dag van de week")
     st.pyplot(fig_day2)
 
 with tab3:
@@ -148,4 +151,5 @@ with tab3:
         fig_fleet = plt.figure(figsize=(10, 5))
         sns.barplot(x=fleet.values, y=fleet.index, palette='Greens_r')
         plt.xlabel("Aantal vluchten")
+        plt.ylabel("type vliegtuig")
         st.pyplot(fig_fleet)
