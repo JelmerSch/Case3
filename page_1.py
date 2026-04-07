@@ -247,7 +247,7 @@ with tab_animatie:
             mapbox=dict(
                 style="open-street-map",
                 center=dict(lat=46.0, lon=3.5),
-                zoom=4.4,
+                zoom=4.2,
             ),
             updatemenus=[
                 dict(
