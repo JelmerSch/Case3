@@ -326,7 +326,7 @@ df_map['Total_Climate_Impact_CO2e_Ton'] = (df_map['Climate_Impact_CO2e_kg'] * df
 
 # --- 6. DASHBOARD UI ---
 st.title("🌍 Wereldwijde Vluchtactiviteit & Klimaatimpact")
-st.write(f"In dit dashboard zie je gegevens voor de periode: **{geselecteerde_periode[0].strftime('%d-%m-%Y')} tot {geselecteerde_periode[1].strftime('%d-%m-%Y')}**")
+st.write(f"Elke dag landen en vertrekken er duizenden vliegtuigen. Hierachter zit een wereld van data. In dit dashboard is twee jaar vliegdata van Zürich weergegeven. Op de verschillende pagina's zijn een aantal zaken te vinden. Hierbij kan gedacht worden aan populaire bestemmingen, milieu impact, type vliegtuigen en vertragingen. In dit dashboard zie je gegevens voor de periode: **{geselecteerde_periode[0].strftime('%d-%m-%Y')} tot {geselecteerde_periode[1].strftime('%d-%m-%Y')}**")
 
 # --- BUBBEL DIAGRAM ---
 st.header("1. Wereldwijde Vluchtactiviteit")
