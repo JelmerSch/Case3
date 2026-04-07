@@ -66,14 +66,14 @@ COLORS_DARK = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b",
 ### Pagina-inhoud  ###
 ######################
 
-st.title("Vluchten van Zippie")
+st.title("Vluchten van Amsterdam naar Barcelona")
 st.divider()
 
 ######################
 ### 1. Statistieken ##
 ######################
 
-st.subheader("Statistieken over alle vluchten (30 sec)")
+st.subheader("Statistieken over alle vluchten")
 
 gem_tijden         = []
 gem_snelheden      = []
@@ -116,10 +116,6 @@ st.divider()
 st.subheader("Vliegroutes & Heading")
 
 tab_kaart, tab_animatie = st.tabs(["🗺️ Kaart", "▶️ Animatie"])
-
-# ──────────────────────────────────────────────
-# TAB 1 — Kaart
-# ──────────────────────────────────────────────
 with tab_kaart:
     fig_kaart = go.Figure()
 
@@ -155,9 +151,7 @@ with tab_kaart:
     )
     st.plotly_chart(fig_kaart, use_container_width=True)
 
-# ──────────────────────────────────────────────
-# TAB 2 — Animatie (2D + 3D sub-tabs)
-# ──────────────────────────────────────────────
+############ Tab 2 ##############
 with tab_animatie:
     st.markdown(
         "Selecteer één vlucht om de animatie te starten. "
@@ -193,9 +187,6 @@ with tab_animatie:
         # ── sub-tabs ──
         sub_2d, sub_3d = st.tabs(["🗺️ 2D animatie", "🏔️ 3D hoogteprofiel"])
 
-        # ══════════════════════════════════════════
-        # SUB-TAB A — 2D animatie met heading-pijl
-        # ══════════════════════════════════════════
         with sub_2d:
             frames_2d = []
             for i in range(1, len(lats) + 1):
