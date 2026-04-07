@@ -170,9 +170,9 @@ med_vertr = df["vertraging_min"].median()
 
 c1, c2, c3, c4, c5, c6 = st.columns(6)
 c1.metric("Totaal vluchten", f"{totaal:,}")
-c2.metric("✅ Op tijd (<5 min)", f"{on_time:,}", f"{on_time/totaal*100:.1f}%")
-c3.metric("🟡 Kleine vertraging (5-45 min)", f"{small_del:,}", f"{small_del/totaal*100:.1f}%")
-c4.metric("🔴 Grote vertraging (>45 min)", f"{large_del:,}", f"{large_del/totaal*100:.1f}%")
+c2.metric("✅ Op tijd (<5 min)", f"{on_time:,}")
+c3.metric("🟡 Kleine vertraging (5-45 min)", f"{small_del:,}")
+c4.metric("🔴 Grote vertraging (>45 min)", f"{large_del:,}")
 c5.metric("📊 Gem. vertraging", f"{gem_vertr:.1f} min")
 c6.metric("📈 Mediaan vertraging", f"{med_vertr:.1f} min")
 
@@ -251,13 +251,15 @@ st.divider()
 ######################
 
 st.header("3. Lineaire Regressiemodel")
-st.markdown("""
+st.markdown(f"""
 In deze sectie kun je een lineair regressiemodel trainen om vertragingen te voorspellen.
 Je kunt selecteren welke kenmerken (features) het model moet gebruiken.
 Na het trainen worden de prestaties van het model getoond met behulp van statistieken en grafieken.
-* **R² score**: Geeft aan hoeveel van de variatie in de vertraging het model verklaart (1 is perfect).
-* **MAE (Mean Absolute Error)**: De gemiddelde afwijking van de voorspellingen.
-* **Feature Importantie**: Laat zien welk effect elk kenmerk heeft op de voorspelde vertraging.
+
+* **R² score**: Geeft aan hoeveel van de variatie in de vertraging het model verklaart (1 is perfect, 0 betekent dat het model niets verklaart).
+* **MAE (Mean Absolute Error)**: De gemiddelde absolute afwijking tussen de voorspelde en werkelijke vertraging, uitgedrukt in minuten.
+* **RMSE (Root Mean Squared Error)**: De wortel van de gemiddelde kwadratische fout. Net als MAE meet dit de voorspellingsfout in minuten, maar RMSE straft grote fouten zwaarder af dan MAE — een RMSE van 20 min bij een MAE van 10 min betekent dat er een aantal uitschieters zijn die het gemiddelde omhoog trekken.
+* **Testset grootte (%)**: De data wordt opgesplitst in een trainingsset en een testset. Het model leert alleen van de trainingsset; de testset wordt gebruikt om te controleren hoe goed het model generaliseert naar nieuwe, ongeziene vluchten. Een grotere testset geeft een betrouwbaardere evaluatie, maar laat minder data over om op te trainen.
 """)
 
 # Beschikbare features
@@ -349,16 +351,18 @@ with col_r1:
         marker=dict(size=4, color="#1f77b4", opacity=0.5),
         name="Voorspelling",
     ))
-    mn, mx = float(y_test.min()), float(y_test.max())
+lijn_max = max(200, float(y_test.max()), float(y_pred.max()))
+    lijn_min = min(0, float(y_test.min()), float(y_pred.min()))
     fig_scatter.add_trace(go.Scatter(
-        x=[mn, mx], y=[mn, mx],
+        x=[lijn_min, lijn_max], y=[lijn_min, lijn_max],
         mode="lines",
         line=dict(color="red", dash="dash", width=1),
         name="Ideaal",
     ))
+
     fig_scatter.update_layout(
-        xaxis_title="Werkelijke vertraging",
-        yaxis_title="Voorspelde vertraging",
+        xaxis=dict(title="Werkelijke vertraging (min)", range=[lijn_min, 200]),
+        yaxis=dict(title="Voorspelde vertraging (min)", range=[lijn_min, 200]),
         height=380,
         margin=dict(l=40, r=20, t=10, b=40),
     )
