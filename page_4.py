@@ -15,14 +15,14 @@ initialize_data()
 # Stel de paginatitel in (optioneel)
 st.set_page_config(page_title="Vluchtvertragingsanalyse", layout="wide")
 
-######################
-### Data laden en voorbereiden
-######################
+##################################
+### Data laden en voorbereiden ###
+##################################
 
 flights_raw = st.session_state.get("flights", {})
 airports = st.session_state.get("airports", pd.DataFrame())
 
-# ✅ Fix: gebruik ICAO-kolom en sla op in de juiste variabele
+# Gebruik ICAO-kolom
 icao_to_full_name = {}
 if airports is not None and not airports.empty:
     if "ICAO" in airports.columns and "Name" in airports.columns:
@@ -41,9 +41,9 @@ if schedule_key is None:
 
 df_raw = flights_raw[schedule_key].copy()
 
-######################
-### Feature engineering
-######################
+###########################
+### Feature engineering ###
+###########################
 
 def parse_time_col(series: pd.Series) -> pd.Series:
     """Zet een tijdskolom (HH:MM) om naar minuten."""
@@ -105,19 +105,19 @@ def build_features(df: pd.DataFrame, airports_mapping) -> pd.DataFrame:
             df["LSV"].astype(str).str.strip().str.upper() == "L"
         ).astype(int)
 
-    # ✈️ Aircraft type (label + code voor model)
+    # Aircraft type (label + code voor model)
     if "ACT" in df.columns:
         df["actype_label"] = df["ACT"].astype(str).str.strip().fillna("ONBEKEND")
         le_act = LabelEncoder()
         df["actype_code"] = le_act.fit_transform(df["actype_label"])
 
-    # 🛫 Runway
+    # Runway
     if "RWY" in df.columns:
         df["rwy_label"] = df["RWY"].astype(str).str.strip().fillna("ONBEKEND")
         le_rwy = LabelEncoder()
         df["rwy_code"] = le_rwy.fit_transform(df["rwy_label"])
 
-    # 🌍 Airport mapping (IATA -> Volledige naam)
+    # Airport mapping (ICAO -> Volledige naam)
     if "Org/Des" in df.columns:
         # Haal de volledige luchthavennaam op uit de mapping
         df["airport_full_name"] = df["Org/Des"].map(airports_mapping)
@@ -136,13 +136,13 @@ def build_features(df: pd.DataFrame, airports_mapping) -> pd.DataFrame:
 # Bouw de features
 df = build_features(df_raw, icao_to_full_name)
 
-######################
-### UI - Hoofdpagina
-######################
+########################
+### UI - Hoofdpagina ###
+########################
 
-st.title("✈️ Vertragingsanalyse & Voorspeller")
+st.title("Vertragingsanalyse & voorspeller")
 st.markdown("""
-Welkom op het dashboard voor het analyseren en voorspellen van vluchtvertragingen.
+Welkom op de pagina voor het analyseren en voorspellen van vluchtvertragingen.
 Dit dashboard is onderverdeeld in vier secties:
 1.  **Overzicht**: Bekijk de belangrijkste statistieken over vertragingen.
 2.  **Visualisaties**: Analyseer de verdeling van vertragingen via grafieken.
@@ -151,7 +151,7 @@ Dit dashboard is onderverdeeld in vier secties:
 """)
 
 ######################
-### 1. Overzicht
+### 1. Overzicht #####
 ######################
 
 st.header("1. Overzicht vertraging")
@@ -179,7 +179,7 @@ c6.metric("📈 Mediaan vertraging", f"{med_vertr:.1f} min")
 st.divider()
 
 ######################
-### 2. Grafieken
+### 2. Grafieken #####
 ######################
 
 st.header("2. Visualisaties")
@@ -247,7 +247,7 @@ with col_g2:
 st.divider()
 
 ######################
-### 3. Model
+### 3. Model #########
 ######################
 
 st.header("3. Lineaire Regressiemodel")
@@ -281,7 +281,7 @@ beschikbare = {
     if col in df.columns
 }
 
-with st.expander("⚙️ Modelinstellingen", expanded=True):
+with st.expander("Modelinstellingen", expanded=True):
     gekozen_labels = st.multiselect(
         "Kies de features voor het model:",
         options=list(beschikbare.keys()),
@@ -415,7 +415,7 @@ with col_r2:
 st.divider()
 
 ######################
-### 4. Voorspeller
+### 4. Voorspeller ###
 ######################
 
 st.header("4. Voorspel een vertraging")
@@ -464,7 +464,7 @@ for label, col_key in beschikbare.items():
             pred_input[col_key] = st.number_input(label, min_val, max_val, int(df[col_key].median()))
     col_idx += 1
 
-if st.button("🔮 Voorspel vertraging"):
+if st.button("Voorspel vertraging"):
     # Zorg dat de input features in de juiste volgorde staan
     input_data = []
     for col in gekozen_cols:
