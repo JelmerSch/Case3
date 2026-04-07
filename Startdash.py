@@ -230,7 +230,7 @@ df_airports  = st.session_state.get("airports")
 flights_dict = st.session_state.get("flights", {})
 
 # Zoek de schedule in de geladen ZIP-bestanden
-SCHEDULE_KEY = "schedule_airport.csv"   # pas aan als de bestandsnaam anders is
+SCHEDULE_KEY = "schedule_airport"   # pas aan als de bestandsnaam anders is
 
 if SCHEDULE_KEY not in flights_dict:
     st.error(
