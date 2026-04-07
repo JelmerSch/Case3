@@ -78,7 +78,7 @@ with tab1:
     with col_b:
         st.subheader("Volume per Dag")
         fig_day = plt.figure(figsize=(10, 5))
-        order = ['Monday', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag', 'zondag']
+        order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
         day_data = display_df['Day_of_Week'].value_counts().reindex(order)
         sns.barplot(x=day_data.index, y=day_data.values, palette='coolwarm')
         plt.xticks(rotation=45)
