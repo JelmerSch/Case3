@@ -156,15 +156,23 @@ with tab3:
     st.header("Vloot & Bestemmingen")
     col_a, col_b = st.columns(2)
     
-    with col_a:
-        st.subheader("Top 10 Bestemmingen")
-        top_dest = display_df['Name'].value_counts().head(10)
-        fig_top, ax_top = plt.subplots(figsize=(10, 5))
-        sns.barplot(x=top_dest.values, y=top_dest.index, palette='Blues_r', ax=ax_top)
-        ax_top.set_xlabel("Aantal vluchten")
-        ax_top.set_ylabel("")
-        plt.subplots_adjust(left=0.4)
-        st.pyplot(fig_top)
+   with col_a:
+    st.subheader("Top 10 Bestemmingen")
+    top_dest = display_df['Name'].value_counts().head(10)
+    total = display_df['Name'].value_counts().sum()  # ✅ totaal voor percentage berekening
+    
+    fig_top, ax_top = plt.subplots(figsize=(10, 5))
+    sns.barplot(x=top_dest.values, y=top_dest.index, palette='Blues_r', ax=ax_top)
+    
+    # ✅ percentages toevoegen aan het einde van elke balk
+    for i, (value, name) in enumerate(zip(top_dest.values, top_dest.index)):
+        percentage = (value / total) * 100
+        ax_top.text(value, i, f' {percentage:.1f}%', va='center', fontsize=9)
+    
+    ax_top.set_xlabel("Aantal vluchten")
+    ax_top.set_ylabel("")
+    fig_top.subplots_adjust(left=0.4)
+    st.pyplot(fig_top)
 
     with col_b: 
         st.subheader("Vlootsamenstelling")
