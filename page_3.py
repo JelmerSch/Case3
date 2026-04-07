@@ -89,30 +89,29 @@ with tab2:
     col_a, col_b = st.columns(2)
 
     with col_a:
-    st.subheader("Verdeling van Vertragingen (tot 120 min)")
-    fig_hist = plt.figure(figsize=(10, 4))
-    sns.histplot(
+        st.subheader("Verdeling van Vertragingen (tot 120 min)")
+        fig_hist = plt.figure(figsize=(10, 4))
+        sns.histplot(
         display_df[(display_df['Delay_min'] > 0) & (display_df['Delay_min'] < 120)]['Delay_min'],
-        bins=40, kde=True, color='purple'
-    )
-    plt.xlabel("Minuten te laat")
-    st.pyplot(fig_hist)
+        bins=40, kde=True, color='purple')
+        plt.xlabel("Minuten te laat")
+        st.pyplot(fig_hist)
 
     # FIX 2: dubbele/drievoudige st.subheader regels verwijderd, enkel één gehouden
     with col_b:
-    st.subheader("Gemiddelde Vertraging per Bestemming")
-    delay_dest = (
+        st.subheader("Gemiddelde Vertraging per Bestemming")
+        delay_dest = (
         display_df[display_df['Delay_min'] > 0]
         .groupby('Name')['Delay_min']
         .mean()
         .sort_values(ascending=False)
         .head(10)
-    )
-    fig_dest = plt.figure(figsize=(10, 4))
-    sns.barplot(x=delay_dest.values, y=delay_dest.index, palette='Reds_r')
-    plt.xlabel("Gem. vertraging (min)")
-    plt.ylabel("")
-    st.pyplot(fig_dest)
+        )
+        fig_dest = plt.figure(figsize=(10, 4))
+        sns.barplot(x=delay_dest.values, y=delay_dest.index, palette='Reds_r')
+        plt.xlabel("Gem. vertraging (min)")
+        plt.ylabel("")
+        st.pyplot(fig_dest)
 
     st.subheader("Gemiddelde Vertraging per Dag van de Week")
     order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -135,18 +134,18 @@ with tab3:
     col_a, col_b = st.columns(2)
     
     with col_a:
-    st.subheader("Top 10 Bestemmingen")
-    top_dest = display_df['Name'].value_counts().head(10)
-    fig_top = plt.figure(figsize=(10, 5))
-    sns.barplot(x=top_dest.values, y=top_dest.index, palette='Blues_r')
-    plt.xlabel("Aantal vluchten")
-    plt.ylabel("")
-    st.pyplot(fig_top)
+        st.subheader("Top 10 Bestemmingen")
+        top_dest = display_df['Name'].value_counts().head(10)
+        fig_top = plt.figure(figsize=(10, 5))
+        sns.barplot(x=top_dest.values, y=top_dest.index, palette='Blues_r')
+        plt.xlabel("Aantal vluchten")
+        plt.ylabel("")
+        st.pyplot(fig_top)
 
     with col_b: 
-    st.subheader("Vlootsamenstelling")
-    fleet = display_df['ACT'].value_counts().head(10)
-    fig_fleet = plt.figure(figsize=(10, 5))
-    sns.barplot(x=fleet.values, y=fleet.index, palette='Greens_r')
-    plt.xlabel("Aantal vluchten")
-    st.pyplot(fig_fleet)
+        st.subheader("Vlootsamenstelling")
+        fleet = display_df['ACT'].value_counts().head(10)
+        fig_fleet = plt.figure(figsize=(10, 5))
+        sns.barplot(x=fleet.values, y=fleet.index, palette='Greens_r')
+        plt.xlabel("Aantal vluchten")
+        st.pyplot(fig_fleet)
