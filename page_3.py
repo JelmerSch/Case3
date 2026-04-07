@@ -173,9 +173,6 @@ with tab3:
         fig_top.subplots_adjust(left=0.4)
         st.pyplot(fig_top)
     
-    st.header("Vloot & Bestemmingen")
-    col_a, col_b = st.columns(2)
-    
    
 
     with col_b: 
