@@ -234,7 +234,7 @@ st.set_page_config(page_title="Vluchtactiviteit & Klimaat", layout="wide")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Data laden
-df = load_data()
+df_airports, df_schedule = load_data()
 
 # --- STREAMLIT UI ---
 st.title("✈️ Airport Operations & Insights Dashboard")
