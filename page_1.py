@@ -156,90 +156,90 @@ with tab_kaart:
     st.plotly_chart(fig_kaart, use_container_width=True)
 
 ############ Tab 2 ##############
-with tab_animatie:
-    st.markdown(
+    with tab_animatie:
+        st.markdown(
         "Selecteer één vlucht om de animatie te starten. "
         "Het stipje beweegt over de route en een pijl toont de actuele heading."
-    )
+        )
 
-    vlucht_namen = list(flights_30s.keys())
-    gekozen_naam = st.selectbox("Kies een vlucht", vlucht_namen, key="anim_selectbox")
-    df_anim      = flights_30s[gekozen_naam]
-    kleur_anim   = COLORS_DARK[vlucht_namen.index(gekozen_naam) % len(COLORS_DARK)]
+        vlucht_namen = list(flights_30s.keys())
+        gekozen_naam = st.selectbox("Kies een vlucht", vlucht_namen, key="anim_selectbox")
+        df_anim      = flights_30s[gekozen_naam]
+        kleur_anim   = COLORS_DARK[vlucht_namen.index(gekozen_naam) % len(COLORS_DARK)]
 
-    if "[3d Latitude]" not in df_anim.columns or "[3d Longitude]" not in df_anim.columns:
-        st.warning("Lat/Lon kolommen niet gevonden voor de geselecteerde vlucht.")
-    else:
-        lats = df_anim["[3d Latitude]"].tolist()
-        lons = df_anim["[3d Longitude]"].tolist()
+        if "[3d Latitude]" not in df_anim.columns or "[3d Longitude]" not in df_anim.columns:
+            st.warning("Lat/Lon kolommen niet gevonden voor de geselecteerde vlucht.")
+        else:
+            lats = df_anim["[3d Latitude]"].tolist()
+            lons = df_anim["[3d Longitude]"].tolist()
 
-        heeft_hoogte   = "[3d Altitude M]" in df_anim.columns
-        heeft_snelheid = "TRUE AIRSPEED (derived)" in df_anim.columns
-        heeft_tijd     = "Time (secs)" in df_anim.columns
-        heeft_heading  = "[3d Heading]" in df_anim.columns
+            heeft_hoogte   = "[3d Altitude M]" in df_anim.columns
+            heeft_snelheid = "TRUE AIRSPEED (derived)" in df_anim.columns
+            heeft_tijd     = "Time (secs)" in df_anim.columns
+            heeft_heading  = "[3d Heading]" in df_anim.columns
 
-        hoogtes = df_anim["[3d Altitude M]"].tolist() if heeft_hoogte else [0] * len(lats)
+            hoogtes = df_anim["[3d Altitude M]"].tolist() if heeft_hoogte else [0] * len(lats)
 
-        # ── hulpfunctie: heading → kleine offset voor pijlpunt ──
-        def heading_offset(heading_deg: float, stap: float = 0.015):
-            """Geeft (dlat, dlon) voor een pijl in de richting van heading_deg."""
-            rad = np.radians(heading_deg)
-            dlat = stap * np.cos(rad)
-            dlon = stap * np.sin(rad)
-            return dlat, dlon
+            # ── hulpfunctie: heading → kleine offset voor pijlpunt ──
+            def heading_offset(heading_deg: float, stap: float = 0.015):
+                """Geeft (dlat, dlon) voor een pijl in de richting van heading_deg."""
+                rad = np.radians(heading_deg)
+                dlat = stap * np.cos(rad)
+                dlon = stap * np.sin(rad)
+                return dlat, dlon
 
-        # ── sub-tabs ──
-        sub_2d, sub_3d = st.tabs(["🗺️ 2D animatie", "🏔️ 3D hoogteprofiel"])
+            # ── sub-tabs ──
+            sub_2d, sub_3d = st.tabs(["🗺️ 2D animatie", "🏔️ 3D hoogteprofiel"])
 
-with sub_2d:
-    frames_2d = []
-    for i in range(1, len(lats) + 1):
-        hover_parts = [f"<b>{gekozen_naam}</b>"]
-        if heeft_tijd:
-            t = df_anim["Time (secs)"].iloc[i - 1]
-            hover_parts.append(f"Tijd: {int(t)} sec")
-        if heeft_hoogte:
-            h = df_anim["[3d Altitude M]"].iloc[i - 1]
-            hover_parts.append(f"Hoogte: {h:.0f} m")
-        if heeft_snelheid:
-            s = df_anim["TRUE AIRSPEED (derived)"].iloc[i - 1] * KNOTS_TO_KMH
-            hover_parts.append(f"Snelheid: {s:.1f} km/h")
-        if heeft_heading:
-            hdg = df_anim["[3d Heading]"].iloc[i - 1]
-            hover_parts.append(f"Heading: {hdg:.0f}°")
-        hover_tekst = "<br>".join(hover_parts) + "<extra></extra>"
+    with sub_2d:
+        frames_2d = []
+        for i in range(1, len(lats) + 1):
+            hover_parts = [f"<b>{gekozen_naam}</b>"]
+            if heeft_tijd:
+                t = df_anim["Time (secs)"].iloc[i - 1]
+                hover_parts.append(f"Tijd: {int(t)} sec")
+            if heeft_hoogte:
+                h = df_anim["[3d Altitude M]"].iloc[i - 1]
+                hover_parts.append(f"Hoogte: {h:.0f} m")
+            if heeft_snelheid:
+                s = df_anim["TRUE AIRSPEED (derived)"].iloc[i - 1] * KNOTS_TO_KMH
+                hover_parts.append(f"Snelheid: {s:.1f} km/h")
+            if heeft_heading:
+                hdg = df_anim["[3d Heading]"].iloc[i - 1]
+                hover_parts.append(f"Heading: {hdg:.0f}°")
+            hover_tekst = "<br>".join(hover_parts) + "<extra></extra>"
 
-        frame_data = [
-            # Staart
-            go.Scattermapbox(
-                lat=lats[:i], lon=lons[:i],
-                mode="lines",
-                line=dict(width=2, color=kleur_anim),
-                hoverinfo="skip", showlegend=False,
-            ),
-            # Vliegtuig-positie (gewone stip)
-            go.Scattermapbox(
-                lat=[lats[i - 1]], lon=[lons[i - 1]],
-                mode="markers",
-                marker=dict(size=14, color=kleur_anim, symbol="circle"),
-                name=gekozen_naam,
-                hovertemplate=hover_tekst,
-                showlegend=False,
-            ),
-        ]
-        frames_2d.append(go.Frame(data=frame_data, name=str(i)))
+            frame_data = [
+                # Staart
+                go.Scattermapbox(
+                    lat=lats[:i], lon=lons[:i],
+                    mode="lines",
+                    line=dict(width=2, color=kleur_anim),
+                    hoverinfo="skip", showlegend=False,
+                ),
+                # Vliegtuig-positie (gewone stip)
+                go.Scattermapbox(
+                    lat=[lats[i - 1]], lon=[lons[i - 1]],
+                    mode="markers",
+                    marker=dict(size=14, color=kleur_anim, symbol="circle"),
+                    name=gekozen_naam,
+                    hovertemplate=hover_tekst,
+                    showlegend=False,
+                ),
+            ]
+            frames_2d.append(go.Frame(data=frame_data, name=str(i)))
 
-    fig_2d = go.Figure(
-        data=[
-            go.Scattermapbox(lat=[lats[0]], lon=[lons[0]], mode="lines",
-                             line=dict(width=2, color=kleur_anim),
-                             hoverinfo="skip", showlegend=False),
-            go.Scattermapbox(lat=[lats[0]], lon=[lons[0]], mode="markers",
-                             marker=dict(size=14, color=kleur_anim, symbol="circle"),
-                             showlegend=False),
-        ],
-        frames=frames_2d,
-    )
+        fig_2d = go.Figure(
+            data=[
+                go.Scattermapbox(lat=[lats[0]], lon=[lons[0]], mode="lines",
+                                 line=dict(width=2, color=kleur_anim),
+                                 hoverinfo="skip", showlegend=False),
+                go.Scattermapbox(lat=[lats[0]], lon=[lons[0]], mode="markers",
+                                 marker=dict(size=14, color=kleur_anim, symbol="circle"),
+                                 showlegend=False),
+            ],
+            frames=frames_2d,
+        )
 
             fig_2d.update_layout(
                 mapbox=dict(
