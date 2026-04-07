@@ -161,8 +161,8 @@ with tab3:
         top_dest = display_df['Name'].value_counts().head(10)
         fig_top, ax_top = plt.subplots(figsize=(10, 5))
         sns.barplot(x=top_dest.values, y=top_dest.index, palette='Blues_r', ax=ax_top)
-        ax_top.set.xlabel("Aantal vluchten")
-        ax_top.set.ylabel("")
+        ax_top.set_xlabel("Aantal vluchten")
+        ax_top.set_ylabel("")
         plt.subplots_adjust(left=0.4)
         st.pyplot(fig_top)
 
