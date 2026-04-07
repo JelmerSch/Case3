@@ -344,6 +344,7 @@ with col_r1:
     """)
     sample_n = min(500, len(y_test))
     idx = np.random.choice(len(y_test), sample_n, replace=False)
+
     fig_scatter = go.Figure()
     fig_scatter.add_trace(go.Scatter(
         x=y_test[idx], y=y_pred[idx],
@@ -351,7 +352,9 @@ with col_r1:
         marker=dict(size=4, color="#1f77b4", opacity=0.5),
         name="Voorspelling",
     ))
-lijn_max = max(200, float(y_test.max()), float(y_pred.max()))
+
+    # Ideale lijn: altijd minstens tot 200, anders tot het max van de data
+    lijn_max = max(200, float(y_test.max()), float(y_pred.max()))
     lijn_min = min(0, float(y_test.min()), float(y_pred.min()))
     fig_scatter.add_trace(go.Scatter(
         x=[lijn_min, lijn_max], y=[lijn_min, lijn_max],
