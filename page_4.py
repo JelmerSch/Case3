@@ -22,12 +22,11 @@ st.set_page_config(page_title="Vluchtvertragingsanalyse", layout="wide")
 flights_raw = st.session_state.get("flights", {})
 airports = st.session_state.get("airports", pd.DataFrame())
 
-# Maak een map van IATA-code naar volledige luchthavennaam
+# ✅ Fix: gebruik ICAO-kolom en sla op in de juiste variabele
 icao_to_full_name = {}
-if not airports.empty:
-    # Zorg dat de kolommen 'ICAO' en 'Name' bestaan
+if airports is not None and not airports.empty:
     if "ICAO" in airports.columns and "Name" in airports.columns:
-        iata_to_full_name = airports.set_index("ICAO")["Name"].to_dict()
+        icao_to_full_name = (airports.dropna(subset=["ICAO", "Name"]).set_index("ICAO")["Name"].to_dict())
 
 # Zoek het juiste CSV-bestand in de flights_raw dictionary (bijv. "schedule_airport")
 schedule_key = None
