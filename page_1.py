@@ -56,14 +56,12 @@ def clean_flight(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
-# Nieuwe dictionary met de gewenste namen "Vlucht 1", "Vlucht 2", etc.
 flights_30s = {}
 for i, (oude_naam, df) in enumerate(flights_30s_raw.items(), start=1):
     nieuwe_naam = f"Vlucht {i}"
     flights_30s[nieuwe_naam] = clean_flight(df)
 
 KNOTS_TO_KMH = 1.852
-
 COLORS_DARK = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2"]
 
 ######################
@@ -117,9 +115,10 @@ st.divider()
 ### 2. Tabs kaart  ###
 ######################
 
-st.subheader("Vliegroutes & Heading")
+st.subheader("Vliegroutes & Animatie")
 
 tab_kaart, tab_animatie = st.tabs(["🗺️ Kaart", "▶️ Animatie"])
+
 with tab_kaart:
     fig_kaart = go.Figure()
 
@@ -155,91 +154,88 @@ with tab_kaart:
     )
     st.plotly_chart(fig_kaart, use_container_width=True)
 
-############ Tab 2 ##############
-    with tab_animatie:
-        st.markdown(
+with tab_animatie:
+    st.markdown(
         "Selecteer één vlucht om de animatie te starten. "
-        "Het stipje beweegt over de route en een pijl toont de actuele heading."
-        )
+        "Het stipje beweegt over de route."
+    )
 
-        vlucht_namen = list(flights_30s.keys())
-        gekozen_naam = st.selectbox("Kies een vlucht", vlucht_namen, key="anim_selectbox")
-        df_anim      = flights_30s[gekozen_naam]
-        kleur_anim   = COLORS_DARK[vlucht_namen.index(gekozen_naam) % len(COLORS_DARK)]
+    vlucht_namen = list(flights_30s.keys())
+    gekozen_naam = st.selectbox("Kies een vlucht", vlucht_namen, key="anim_selectbox")
+    df_anim      = flights_30s[gekozen_naam]
+    kleur_anim   = COLORS_DARK[vlucht_namen.index(gekozen_naam) % len(COLORS_DARK)]
 
-        if "[3d Latitude]" not in df_anim.columns or "[3d Longitude]" not in df_anim.columns:
-            st.warning("Lat/Lon kolommen niet gevonden voor de geselecteerde vlucht.")
-        else:
-            lats = df_anim["[3d Latitude]"].tolist()
-            lons = df_anim["[3d Longitude]"].tolist()
+    if "[3d Latitude]" not in df_anim.columns or "[3d Longitude]" not in df_anim.columns:
+        st.warning("Lat/Lon kolommen niet gevonden voor de geselecteerde vlucht.")
+    else:
+        lats = df_anim["[3d Latitude]"].tolist()
+        lons = df_anim["[3d Longitude]"].tolist()
 
-            heeft_hoogte   = "[3d Altitude M]" in df_anim.columns
-            heeft_snelheid = "TRUE AIRSPEED (derived)" in df_anim.columns
-            heeft_tijd     = "Time (secs)" in df_anim.columns
-            heeft_heading  = "[3d Heading]" in df_anim.columns
+        heeft_hoogte   = "[3d Altitude M]" in df_anim.columns
+        heeft_snelheid = "TRUE AIRSPEED (derived)" in df_anim.columns
+        heeft_tijd     = "Time (secs)" in df_anim.columns
+        heeft_heading  = "[3d Heading]" in df_anim.columns
 
-            hoogtes = df_anim["[3d Altitude M]"].tolist() if heeft_hoogte else [0] * len(lats)
+        hoogtes = df_anim["[3d Altitude M]"].tolist() if heeft_hoogte else [0] * len(lats)
 
-            # ── hulpfunctie: heading → kleine offset voor pijlpunt ──
-            def heading_offset(heading_deg: float, stap: float = 0.015):
-                """Geeft (dlat, dlon) voor een pijl in de richting van heading_deg."""
-                rad = np.radians(heading_deg)
-                dlat = stap * np.cos(rad)
-                dlon = stap * np.sin(rad)
-                return dlat, dlon
+        sub_2d, sub_3d = st.tabs(["🗺️ 2D animatie", "🏔️ 3D hoogteprofiel"])
 
-            # ── sub-tabs ──
-            sub_2d, sub_3d = st.tabs(["🗺️ 2D animatie", "🏔️ 3D hoogteprofiel"])
+        # ══════════════════════════════════════════
+        # SUB-TAB A — 2D animatie
+        # ══════════════════════════════════════════
+        with sub_2d:
+            frames_2d = []
+            for i in range(1, len(lats) + 1):
+                hover_parts = [f"<b>{gekozen_naam}</b>"]
+                if heeft_tijd:
+                    t = df_anim["Time (secs)"].iloc[i - 1]
+                    hover_parts.append(f"Tijd: {int(t)} sec")
+                if heeft_hoogte:
+                    h = df_anim["[3d Altitude M]"].iloc[i - 1]
+                    hover_parts.append(f"Hoogte: {h:.0f} m")
+                if heeft_snelheid:
+                    s = df_anim["TRUE AIRSPEED (derived)"].iloc[i - 1] * KNOTS_TO_KMH
+                    hover_parts.append(f"Snelheid: {s:.1f} km/h")
+                if heeft_heading:
+                    hdg = df_anim["[3d Heading]"].iloc[i - 1]
+                    hover_parts.append(f"Heading: {hdg:.0f}°")
+                hover_tekst = "<br>".join(hover_parts) + "<extra></extra>"
 
-    with sub_2d:
-        frames_2d = []
-        for i in range(1, len(lats) + 1):
-            hover_parts = [f"<b>{gekozen_naam}</b>"]
-            if heeft_tijd:
-                t = df_anim["Time (secs)"].iloc[i - 1]
-                hover_parts.append(f"Tijd: {int(t)} sec")
-            if heeft_hoogte:
-                h = df_anim["[3d Altitude M]"].iloc[i - 1]
-                hover_parts.append(f"Hoogte: {h:.0f} m")
-            if heeft_snelheid:
-                s = df_anim["TRUE AIRSPEED (derived)"].iloc[i - 1] * KNOTS_TO_KMH
-                hover_parts.append(f"Snelheid: {s:.1f} km/h")
-            if heeft_heading:
-                hdg = df_anim["[3d Heading]"].iloc[i - 1]
-                hover_parts.append(f"Heading: {hdg:.0f}°")
-            hover_tekst = "<br>".join(hover_parts) + "<extra></extra>"
+                frame_data = [
+                    go.Scattermapbox(
+                        lat=lats[:i], lon=lons[:i],
+                        mode="lines",
+                        line=dict(width=2, color=kleur_anim),
+                        hoverinfo="skip", showlegend=False,
+                    ),
+                    go.Scattermapbox(
+                        lat=[lats[i - 1]], lon=[lons[i - 1]],
+                        mode="markers",
+                        marker=dict(size=14, color=kleur_anim, symbol="circle"),
+                        name=gekozen_naam,
+                        hovertemplate=hover_tekst,
+                        showlegend=False,
+                    ),
+                ]
+                frames_2d.append(go.Frame(data=frame_data, name=str(i)))
 
-            frame_data = [
-                # Staart
-                go.Scattermapbox(
-                    lat=lats[:i], lon=lons[:i],
-                    mode="lines",
-                    line=dict(width=2, color=kleur_anim),
-                    hoverinfo="skip", showlegend=False,
-                ),
-                # Vliegtuig-positie (gewone stip)
-                go.Scattermapbox(
-                    lat=[lats[i - 1]], lon=[lons[i - 1]],
-                    mode="markers",
-                    marker=dict(size=14, color=kleur_anim, symbol="circle"),
-                    name=gekozen_naam,
-                    hovertemplate=hover_tekst,
-                    showlegend=False,
-                ),
-            ]
-            frames_2d.append(go.Frame(data=frame_data, name=str(i)))
-
-        fig_2d = go.Figure(
-            data=[
-                go.Scattermapbox(lat=[lats[0]], lon=[lons[0]], mode="lines",
-                                 line=dict(width=2, color=kleur_anim),
-                                 hoverinfo="skip", showlegend=False),
-                go.Scattermapbox(lat=[lats[0]], lon=[lons[0]], mode="markers",
-                                 marker=dict(size=14, color=kleur_anim, symbol="circle"),
-                                 showlegend=False),
-            ],
-            frames=frames_2d,
-        )
+            fig_2d = go.Figure(
+                data=[
+                    go.Scattermapbox(
+                        lat=[lats[0]], lon=[lons[0]],
+                        mode="lines",
+                        line=dict(width=2, color=kleur_anim),
+                        hoverinfo="skip", showlegend=False,
+                    ),
+                    go.Scattermapbox(
+                        lat=[lats[0]], lon=[lons[0]],
+                        mode="markers",
+                        marker=dict(size=14, color=kleur_anim, symbol="circle"),
+                        showlegend=False,
+                    ),
+                ],
+                frames=frames_2d,
+            )
 
             fig_2d.update_layout(
                 mapbox=dict(
@@ -278,10 +274,10 @@ with tab_kaart:
                 height=570,
             )
             st.plotly_chart(fig_2d, use_container_width=True)
-            st.caption("🟠 Oranje pijl = actuele vliegrichting (heading)")
+            st.caption("● Stip = huidige positie")
 
         # ══════════════════════════════════════════
-        # SUB-TAB B — 3D hoogteprofiel (Scatter3d)
+        # SUB-TAB B — 3D hoogteprofiel
         # ══════════════════════════════════════════
         with sub_3d:
             st.markdown(
@@ -308,14 +304,12 @@ with tab_kaart:
                     hover_3d = "<br>".join(hover_parts_3d) + "<extra></extra>"
 
                     frame_data_3d = [
-                        # Staart (volledig pad t/m punt i)
                         go.Scatter3d(
                             x=lons[:i], y=lats[:i], z=hoogtes[:i],
                             mode="lines",
                             line=dict(width=4, color=kleur_anim),
                             hoverinfo="skip", showlegend=False,
                         ),
-                        # Huidige positie
                         go.Scatter3d(
                             x=[lons[i - 1]], y=[lats[i - 1]], z=[hoogtes[i - 1]],
                             mode="markers",
