@@ -56,7 +56,11 @@ def clean_flight(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
-flights_30s = {naam: clean_flight(df) for naam, df in flights_30s_raw.items()}
+# Nieuwe dictionary met de gewenste namen "Vlucht 1", "Vlucht 2", etc.
+flights_30s = {}
+for i, (oude_naam, df) in enumerate(flights_30s_raw.items(), start=1):
+    nieuwe_naam = f"Vlucht {i}"
+    flights_30s[nieuwe_naam] = clean_flight(df)
 
 KNOTS_TO_KMH = 1.852
 
