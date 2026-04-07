@@ -210,37 +210,39 @@ with col_g1:
 with col_g2:
     st.subheader("Totaal aantal vertragingen per uur")
     if "uur" in df.columns:
-        # Groepeer op uur en tel het aantal vluchten met een vertraging > 0
-        uur_counts = df.groupby("uur")["vertraging_min"].count().reset_index()
-        fig_pie_uur = px.pie(
-            uur_counts, values="vertraging_min", names="uur",
-            color_discrete_sequence=px.colors.sequential.RdBu,
-            hole=0.4,
+        uur_counts = (
+            df.groupby("uur")["vertraging_min"]
+            .count()
+            .reset_index()
+            .rename(columns={"vertraging_min": "aantal", "uur": "Uur"})
         )
-        fig_pie_uur.update_traces(textinfo="percent+label", labels=uur_counts["uur"].astype(str) + "h")
-        fig_pie_uur.update_layout(height=350, margin=dict(l=0, r=0, t=10, b=0), showlegend=False)
-        st.plotly_chart(fig_pie_uur, use_container_width=True)
-
-# Histogram vertraging
-st.subheader("Histogram vertraging (-30 t/m +120 min)")
-df_clip = df[df["vertraging_min"].between(-30, 120)]
-fig_hist = px.histogram(
-    df_clip, x="vertraging_min", nbins=60,
-    color="delay_cat",
-    color_discrete_map={
-        "On time": "#2ca02c",
-        "Small delay": "#ff7f0e",
-        "Large delay": "#d62728",
-    },
-    labels={"vertraging_min": "Vertraging (min)", "delay_cat": "Categorie"},
-)
-fig_hist.update_layout(
-    height=350,
-    margin=dict(l=40, r=20, t=10, b=40),
-    bargap=0.05,
-    legend_title="Categorie",
-)
-st.plotly_chart(fig_hist, use_container_width=True)
+        # Kleur op categoriemix per uur
+        uur_delay = (
+            df.groupby(["uur", "delay_cat"])
+            .size()
+            .reset_index(name="aantal")
+            .rename(columns={"uur": "Uur"})
+        )
+        fig_uur = px.bar(
+            uur_delay,
+            x="Uur",
+            y="aantal",
+            color="delay_cat",
+            color_discrete_map={
+                "On time":     "#2ca02c",
+                "Small delay": "#ff7f0e",
+                "Large delay": "#d62728",
+            },
+            labels={"aantal": "Aantal vluchten", "Uur": "Uur van de dag", "delay_cat": "Categorie"},
+            barmode="stack",
+        )
+        fig_uur.update_layout(
+            height=350,
+            margin=dict(l=40, r=20, t=10, b=40),
+            legend_title="Categorie",
+            xaxis=dict(tickmode="linear", dtick=1),
+        )
+        st.plotly_chart(fig_uur, use_container_width=True)
 
 st.divider()
 
@@ -405,7 +407,7 @@ Vul de details van de vlucht in en klik op 'Voorspel vertraging'.
 """)
 
 # Maak een dictionary voor de volledige luchthavennamen (voor de selectbox)
-org_des_labels = sorted(df["airport_full_name"].unique())
+org_des_labels = sorted(df["airport_full_name"].dropna().unique())
 
 pred_input = {}
 cols_pred = st.columns(4)
