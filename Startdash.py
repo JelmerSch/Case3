@@ -4,6 +4,10 @@ import zipfile
 import os
 import io
 from pathlib import Path
+import datetime
+import numpy as np
+import plotly.express as px 
+
 
 ######################
 ###   Configuratie ###
@@ -223,3 +227,83 @@ def _make_debug_row(bestand: str, bron: str, sleutel: str, df) -> dict:
         "Kolommen"      : "-",
         "Geheugen (MB)" : "-",
     }
+
+
+st.set_page_config(page_title="Vluchtactiviteit & Klimaat", layout="wide")
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+# --- 1. DATA INLADEN ---
+@st.cache_data
+def load_data():
+    df_airports = pd.read_csv(os.path.join(BASE_DIR, 'airports-extended-clean.csv'), sep=';', decimal=',')
+    
+    # Let op: index_col=0 is hier weggehaald!
+    df_schedule = pd.read_csv(
+        os.path.join(BASE_DIR, 'schedule_airport.csv'),
+        sep=',',
+        encoding='utf-8-sig'  
+    )
+    
+    # Nu kan Pandas de kolom 'STD' wel gewoon vinden
+    df_schedule['Datum'] = pd.to_datetime(df_schedule['STD'], dayfirst=True).dt.date
+    
+    return df_airports, df_schedule
+
+
+df_airports, df_schedule = load_data()
+
+# --- 2. CO2 CONFIGURATIE ---
+LAT_HOME = 47.4647
+LON_HOME = 8.5492
+
+co2_factors = {
+    'A319': 5.5,
+    'A320': 6.0,
+    'A321': 6.5,
+    'A21N': 5.5,
+    'B763': 15.0,
+    'A359': 18.0,
+}
+RADIATIVE_FORCING_INDEX = 2.0
+
+# --- 3. SIDEBAR & TIJDFILTER ---
+st.sidebar.header("⚙️ Filters")
+
+min_datum = df_schedule['Datum'].min()
+max_datum = df_schedule['Datum'].max()
+
+geselecteerde_periode = st.sidebar.slider(
+    "Selecteer Periode",
+    min_value=min_datum,
+    max_value=max_datum,
+    value=(min_datum, max_datum),
+    format="DD-MM-YYYY"
+)
+
+# Filter de schedule data op basis van de slider
+mask = (df_schedule['Datum'] >= geselecteerde_periode[0]) & (df_schedule['Datum'] <= geselecteerde_periode[1])
+df_schedule_filtered = df_schedule[mask]
+
+
+# --- 4. DATA VOORBEREIDEN (Gefilterd) ---
+if df_schedule_filtered.empty:
+    st.warning("Er zijn geen vluchten gevonden in deze geselecteerde periode.")
+    st.stop() # Stop met renderen als er geen data is
+
+# Tel het aantal vluchten per luchthaven (nu gebaseerd op de gefilterde data)
+flight_counts = df_schedule_filtered.groupby('Org/Des').size().reset_index(name='Aantal_Vluchten')
+
+# Haal het meest voorkomende vliegtuigtype per luchthaven op
+act_per_airport = (
+    df_schedule_filtered.groupby('Org/Des')['ACT']
+    .agg(lambda x: x.value_counts().index[0])
+    .reset_index()
+)
+
+# Maak df_map aan
+df_map = pd.merge(df_airports, flight_counts, left_on='ICAO', right_on='Org/Des', how='inner')
+df_map = pd.merge(df_map, act_per_airport, left_on='ICAO', right_on='Org/Des', how='left')
+
+
