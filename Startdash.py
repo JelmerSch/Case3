@@ -233,6 +233,38 @@ st.set_page_config(page_title="Vluchtactiviteit & Klimaat", layout="wide")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# Data laden
+df = load_data()
+
+# --- STREAMLIT UI ---
+st.title("✈️ Airport Operations & Insights Dashboard")
+st.markdown("Dit dashboard geeft inzicht in vluchtvolumes, bestemmingen en vertragingen op basis van de verstrekte data.")
+
+# Sidebar filters
+st.sidebar.header("Filters")
+selected_country = st.sidebar.multiselect("Selecteer Landen", options=df['Country'].unique(), default=None)
+
+if selected_country:
+    display_df = df[df['Country'].isin(selected_country)]
+else:
+    display_df = df
+
+# Key Metrics
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    st.metric("Totaal aantal vluchten", len(display_df))
+with col2:
+    avg_delay = display_df[display_df['Delay_min'] > 0]['Delay_min'].mean()
+    st.metric("Gem. Vertraging", f"{avg_delay:.1f} min")
+with col3:
+    st.metric("Unieke Bestemmingen", display_df['Org/Des'].nunique())
+with col4:
+    most_common_ac = display_df['ACT'].mode()[0]
+    st.metric("Meest gebruikt toestel", most_common_ac)
+
+# Tabs
+tab1, tab2, tab3 = st.tabs(["📊 Volumes", "⏰ Vertragingen", "🛩️ Vloot & Bestemmingen"])
 
 # --- 1. DATA INLADEN ---
 @st.cache_data
