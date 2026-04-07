@@ -336,3 +336,55 @@ fig_bubbles = px.scatter_geo(
     projection="natural earth", labels={'Aantal_Vluchten': 'Aantal Vluchten'}
 )
 st.plotly_chart(fig_bubbles, use_container_width=True)
+
+
+st.divider()
+
+# --- STAAF DIAGRAM (Top 10 hubs) ---
+st.header("2. Top 10 Drukste Luchthavens")
+top_10_hubs = df_map.nlargest(10, 'Aantal_Vluchten')
+
+fig_bar = px.bar(
+    top_10_hubs, x='Aantal_Vluchten', y='Name', orientation='h', 
+    color='Aantal_Vluchten', color_continuous_scale='Viridis',
+    labels={'Name': 'Luchthaven', 'Aantal_Vluchten': 'Totaal aantal vluchten'}
+)
+fig_bar.update_layout(yaxis={'categoryorder':'total ascending'})
+st.plotly_chart(fig_bar, use_container_width=True)
+
+st.divider()
+
+# --- KLIMAAT IMPACT SECTIE ---
+st.header("🌱 3. Klimaatimpact Analyse (CO2e)")
+st.write("Overzicht van de uitstoot per route, meegerekend dat effecten op grote hoogte de impact verdubbelen (Radiative Forcing).")
+
+# KPI's
+totale_uitstoot = df_map['Total_Climate_Impact_CO2e_Ton'].sum()
+gemiddelde_vlucht = df_map['Climate_Impact_CO2e_kg'].mean()
+
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.metric("Totale Netwerk Uitstoot (Ton)", f"{totale_uitstoot:,.0f}".replace(',', '.'))
+with col2:
+    st.metric("Gem. uitstoot enkele vlucht (Kg)", f"{gemiddelde_vlucht:,.0f}".replace(',', '.'))
+with col3:
+    bomen_nodig = (totale_uitstoot * 1000) / 20
+    st.metric("Bomen nodig voor compensatie", f"{bomen_nodig:,.0f}".replace(',', '.'))
+
+st.write("") 
+
+# Hier staan de grafieken nu recht onder elkaar in plaats van in kolommen
+
+# Staafdiagram meest vervuilende routes 
+st.subheader("Top 10 Routes (Totale Uitstoot)")
+top_10_co2 = df_map.nlargest(10, 'Total_Climate_Impact_CO2e_Ton')
+
+fig_co2_bar = px.bar(
+    top_10_co2, x='Total_Climate_Impact_CO2e_Ton', y='Name', orientation='h', 
+    color='Total_Climate_Impact_CO2e_Ton', color_continuous_scale='Reds',
+    labels={'Name': 'Luchthaven', 'Total_Climate_Impact_CO2e_Ton': 'CO2e (Ton)'}
+)
+fig_co2_bar.update_layout(yaxis={'categoryorder':'total ascending'})
+st.plotly_chart(fig_co2_bar, use_container_width=True)
+
+st.write("") # Beetje extra ruimte ertussen
