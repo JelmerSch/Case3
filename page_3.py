@@ -116,7 +116,7 @@ with tab2:
         st.pyplot(fig_dest)
 
     st.subheader("Gemiddelde Vertraging per Dag van de Week")
-    order = ['maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag', 'zondag']
+    order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
     delay_day = (
         display_df[display_df['Delay_min'] > 0]
         .groupby('Day_of_Week')['Delay_min']
