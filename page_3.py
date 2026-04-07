@@ -124,12 +124,17 @@ with tab2:
 
     st.subheader("Gemiddelde Vertraging per Dag van de Week")
     order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    nl_order = ['maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag', 'zondag']
+
+    translation = dict(zip(order, nl_order))
+    
     delay_day = (
         display_df[display_df['Delay_min'] > 0]
         .groupby('Day_of_Week')['Delay_min']
         .mean()
         .reindex(order)
     )
+    day_data.index = day_data.index.map(translation)
     fig_day2 = plt.figure(figsize=(10, 4))
     sns.barplot(x=delay_day.index, y=delay_day.values, palette='coolwarm')
     plt.xticks(rotation=45)
