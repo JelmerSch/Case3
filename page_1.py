@@ -159,7 +159,7 @@ with tab_kaart:
 with tab_animatie:
     st.markdown(
         "Selecteer één vlucht om de animatie te starten. "
-        "Het vliegtuigje beweegt over de route en een pijl toont de actuele heading."
+        "Het stipje beweegt over de route en een pijl toont de actuele heading."
     )
 
     vlucht_namen = list(flights_30s.keys())
