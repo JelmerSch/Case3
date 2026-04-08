@@ -351,18 +351,6 @@ fig_bar = px.bar(
 fig_bar.update_layout(yaxis={"categoryorder": "total ascending"})
 st.plotly_chart(fig_bar, use_container_width=True)
 
-# --- TOP 10 DRUKSTE LUCHTHAVENS ---
-st.header("Top 10 Drukste Luchthavens")
-top_10_hubs = df_map.nlargest(10, "Aantal_Vluchten")
-
-fig_bar = px.bar(
-    top_10_hubs, x="Aantal_Vluchten", y="Name", orientation="h",
-    color="Aantal_Vluchten", color_continuous_scale="Viridis",
-    labels={"Name": "Luchthaven", "Aantal_Vluchten": "Totaal aantal vluchten"},
-)
-fig_bar.update_layout(yaxis={"categoryorder": "total ascending"})
-st.plotly_chart(fig_bar, use_container_width=True)
-
 st.divider()
 
 # VERDELING VERTRAGINGSCATEGORIEËN ---
