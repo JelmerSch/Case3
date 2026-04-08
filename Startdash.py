@@ -295,25 +295,27 @@ df_map["CO2_Factor"]                   = df_map["ACT"].map(CO2_FACTORS).fillna(7
 df_map["CO2_Emission_kg"]              = df_map["Distance_km"] * df_map["CO2_Factor"]
 df_map["Climate_Impact_CO2e_kg"]       = df_map["CO2_Emission_kg"] * RADIATIVE_FORCING_INDEX
 df_map["Total_Climate_Impact_CO2e_Ton"] = (df_map["Climate_Impact_CO2e_kg"] * df_map["Aantal_Vluchten"]) / 1000
+
 # --- DASHBOARD UI (STARTDASH) ---
-st.title("🌍 Wereldwijde Vluchtactiviteit & Operations")
+st.title("✈️ Zürich Global Connect: Operations & Performance")
 
-# --- NIEUW: Introductie tekst ---
-st.markdown("""
-### Welkom bij het Airport Insights Dashboard
-Op deze pagina krijgt u een overzicht van de wereldwijde vluchtactiviteit en de operationele bezetting van de luchthavens. 
-De data biedt inzicht in waar de meeste vluchten vandaan komen, welke hubs het drukst zijn en hoe de volumes zich over de tijd verdelen.
+# Introductie tekst ---
+with st.container():
+    st.markdown("""
+    ### Welkom bij het Airport Insights Dashboard
+    Op deze pagina krijgt u een overzicht van de wereldwijde vluchtactiviteit en de operationele bezetting van de luchthavens. 
+    De data biedt inzicht in waar de meeste vluchten vandaan komen, welke hubs het drukst zijn en hoe de volumes zich over de tijd verdelen.
 
-**Diepere Analyse**
-Wilt u meer weten over specifieke onderwerpen zoals vertragingen, vlootdetails of klimaatimpact? 
-Gebruik de navigatie om naar de andere pagina's te gaan. Daar wordt per onderwerp een diepere analyse uitgevoerd met gedetailleerde statistieken.
-""")
+    **Diepere Analyse**
+    Wilt u meer weten over specifieke onderwerpen zoals vertragingen, vlootdetails of klimaatimpact? 
+    Gebruik de navigatie om naar de andere pagina's te gaan. Daar wordt per onderwerp een diepere analyse uitgevoerd met gedetailleerde statistieken.
+    """)
 
-st.write(
-    f"In dit overzicht zie je gegevens voor de geselecteerde periode: "
-    f"**{geselecteerde_periode[0].strftime('%d-%m-%Y')} tot {geselecteerde_periode[1].strftime('%d-%m-%Y')}**"
-)
-
+    st.write(
+        f"In dit overzicht zie je gegevens voor de geselecteerde periode: "
+        f"**{geselecteerde_periode[0].strftime('%d-%m-%Y')} tot {geselecteerde_periode[1].strftime('%d-%m-%Y')}**"
+    )
+st.divider()
 # --- BUBBEL DIAGRAM ---
 st.header("Wereldwijde Vluchtactiviteit")
 fig_bubbles = px.scatter_geo(
