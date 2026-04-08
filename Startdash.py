@@ -295,18 +295,27 @@ df_map["CO2_Factor"]                   = df_map["ACT"].map(CO2_FACTORS).fillna(7
 df_map["CO2_Emission_kg"]              = df_map["Distance_km"] * df_map["CO2_Factor"]
 df_map["Climate_Impact_CO2e_kg"]       = df_map["CO2_Emission_kg"] * RADIATIVE_FORCING_INDEX
 df_map["Total_Climate_Impact_CO2e_Ton"] = (df_map["Climate_Impact_CO2e_kg"] * df_map["Aantal_Vluchten"]) / 1000
+# --- DASHBOARD UI (STARTDASH) ---
+st.title("🌍 Wereldwijde Vluchtactiviteit & Operations")
 
-# --- DASHBOARD UI ---
-st.title("🌍 Wereldwijde Vluchtactiviteit & Klimaatimpact")
+# --- NIEUW: Introductie tekst ---
+st.markdown("""
+### Welkom bij het Airport Insights Dashboard
+Op deze pagina krijgt u een overzicht van de wereldwijde vluchtactiviteit en de operationele bezetting van de luchthavens. 
+De data biedt inzicht in waar de meeste vluchten vandaan komen, welke hubs het drukst zijn en hoe de volumes zich over de tijd verdelen.
+
+**Diepere Analyse**
+Wilt u meer weten over specifieke onderwerpen zoals vertragingen, vlootdetails of klimaatimpact? 
+Gebruik de navigatie om naar de andere pagina's te gaan. Daar wordt per onderwerp een diepere analyse uitgevoerd met gedetailleerde statistieken.
+""")
+
 st.write(
-    f"Elke dag landen en vertrekken er duizenden vliegtuigen. Hierachter zit een wereld van data. "
-    f"In dit dashboard is twee jaar vliegdata van Zürich weergegeven. "
-    f"In dit dashboard zie je gegevens voor de periode: "
+    f"In dit overzicht zie je gegevens voor de geselecteerde periode: "
     f"**{geselecteerde_periode[0].strftime('%d-%m-%Y')} tot {geselecteerde_periode[1].strftime('%d-%m-%Y')}**"
 )
 
-# --- 1. BUBBEL DIAGRAM ---
-st.header("1. Wereldwijde Vluchtactiviteit")
+# --- BUBBEL DIAGRAM ---
+st.header("Wereldwijde Vluchtactiviteit")
 fig_bubbles = px.scatter_geo(
     df_map, lat="Latitude", lon="Longitude", size="Aantal_Vluchten",
     hover_name="Name", color="Aantal_Vluchten", color_continuous_scale="Plasma",
@@ -314,10 +323,36 @@ fig_bubbles = px.scatter_geo(
 )
 st.plotly_chart(fig_bubbles, use_container_width=True)
 
+# ---Vlucht volume  ---
+st.subheader("Vluchtvolume per Maand")
+# We gebruiken de gefilterde schedule data voor de tijdlijn
+df_schedule_filtered['Month_str'] = pd.to_datetime(df_schedule_filtered['STD'], dayfirst=True).dt.to_period('M').astype(str)
+monthly_counts = df_schedule_filtered.groupby('Month_str').size().reset_index(name='Vluchten')
+
+fig_vol_line = px.line(
+    monthly_counts, x='Month_str', y='Vluchten', 
+    markers=True, 
+    labels={'Month_str': 'Maand', 'Vluchten': 'Aantal vluchten'},
+    color_discrete_sequence=['teal']
+)
+st.plotly_chart(fig_vol_line, use_container_width=True)
+
 st.divider()
 
-# --- 2. TOP 10 DRUKSTE LUCHTHAVENS ---
-st.header("2. Top 10 Drukste Luchthavens")
+# --- TOP 10 DRUKSTE LUCHTHAVENS ---
+st.header("Top 10 Drukste Luchthavens")
+top_10_hubs = df_map.nlargest(10, "Aantal_Vluchten")
+
+fig_bar = px.bar(
+    top_10_hubs, x="Aantal_Vluchten", y="Name", orientation="h",
+    color="Aantal_Vluchten", color_continuous_scale="Viridis",
+    labels={"Name": "Luchthaven", "Aantal_Vluchten": "Totaal aantal vluchten"},
+)
+fig_bar.update_layout(yaxis={"categoryorder": "total ascending"})
+st.plotly_chart(fig_bar, use_container_width=True)
+
+# --- TOP 10 DRUKSTE LUCHTHAVENS ---
+st.header("Top 10 Drukste Luchthavens")
 top_10_hubs = df_map.nlargest(10, "Aantal_Vluchten")
 
 fig_bar = px.bar(
@@ -330,31 +365,48 @@ st.plotly_chart(fig_bar, use_container_width=True)
 
 st.divider()
 
-# --- 3. KLIMAATIMPACT ---
-st.header("🌱 3. Klimaatimpact Analyse (CO2e)")
-st.write("Overzicht van de uitstoot per route, meegerekend dat effecten op grote hoogte de impact verdubbelen (Radiative Forcing).")
+# VERDELING VERTRAGINGSCATEGORIEËN ---
+st.header("Verdeling van Vertragingen")
 
-totale_uitstoot    = df_map["Total_Climate_Impact_CO2e_Ton"].sum()
-gemiddelde_vlucht  = df_map["Climate_Impact_CO2e_kg"].mean()
-bomen_nodig        = (totale_uitstoot * 1000) / 20
+col_text, col_chart = st.columns([1, 1])
 
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.metric("Totale Netwerk Uitstoot (Ton)", f"{totale_uitstoot:,.0f}".replace(",", "."))
-with col2:
-    st.metric("Gem. uitstoot enkele vlucht (Kg)", f"{gemiddelde_vlucht:,.0f}".replace(",", "."))
-with col3:
-    st.metric("Bomen nodig voor compensatie", f"{bomen_nodig:,.0f}".replace(",", "."))
+with col_text:
+    st.markdown("""
+    In dit overzicht zie je hoe de vluchten zijn verdeeld over drie vertragingscategorieën. 
+    Dit geeft een direct beeld van de punctualiteit binnen het netwerk.
 
-st.write("")
+    **Wat betekenen deze categorieën?**
+    * **On time (Op tijd):** Vluchten die minder dan **5 minuten** afwijken van hun geplande aankomst- of vertrektijd.
+    * **Small delay (Kleine vertraging):** Vluchten met een vertraging tussen de **5 en 45 minuten**. Dit zijn vaak operationele vertragingen die nog beperkte impact hebben op de rest van de planning.
+    * **Large delay (Grote vertraging):** Vluchten die meer dan **45 minuten** te laat zijn. Deze vertragingen hebben vaak een grote impact op aansluitende vluchten en passagiers.
+    """)
 
-st.subheader("Top 10 Routes (Totale Uitstoot)")
-top_10_co2 = df_map.nlargest(10, "Total_Climate_Impact_CO2e_Ton")
+with col_chart:
+    # Berekening voor het figuur (gebruik makend van de vertragingsanalyse logica)
+    # We passen de categorie-functie toe op de vertragingsdata
+    def get_cat(v):
+        if v < 5: return "On time"
+        elif v <= 45: return "Small delay"
+        else: return "Large delay"
+    
+    # We gebruiken de delay data uit de geladen data
+    # (Zorg dat 'Delay_min' beschikbaar is in je display_df)
+    cat_counts = display_df['Delay_min'].apply(get_cat).value_counts().reindex(
+        ["On time", "Small delay", "Large delay"]
+    )
 
-fig_co2_bar = px.bar(
-    top_10_co2, x="Total_Climate_Impact_CO2e_Ton", y="Name", orientation="h",
-    color="Total_Climate_Impact_CO2e_Ton", color_continuous_scale="Reds",
-    labels={"Name": "Luchthaven", "Total_Climate_Impact_CO2e_Ton": "CO2e (Ton)"},
-)
-fig_co2_bar.update_layout(yaxis={"categoryorder": "total ascending"})
-st.plotly_chart(fig_co2_bar, use_container_width=True)
+    fig_pie_cat = go.Figure(go.Pie(
+        labels=cat_counts.index,
+        values=cat_counts.values,
+        marker=dict(colors=["#2ca02c", "#ff7f0e", "#d62728"]),
+        hole=0.4,
+        textinfo="percent+label",
+    ))
+    fig_pie_cat.update_layout(
+        height=350, 
+        margin=dict(l=0, r=0, t=10, b=0), 
+        showlegend=False
+    )
+    st.plotly_chart(fig_pie_cat, use_container_width=True)
+
+st.divider()
