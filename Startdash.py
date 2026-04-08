@@ -316,6 +316,22 @@ with st.container():
         f"**{geselecteerde_periode[0].strftime('%d-%m-%Y')} tot {geselecteerde_periode[1].strftime('%d-%m-%Y')}**"
     )
 st.divider()
+
+# Key Metrics
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    st.metric("Totaal aantal vluchten", len(display_df))
+with col2:
+    avg_delay = display_df[display_df['Delay_min'] > 0]['Delay_min'].mean()
+    st.metric("Gem. Vertraging", f"{avg_delay:.1f} min")
+with col3:
+    st.metric("Unieke Bestemmingen", display_df['Org/Des'].nunique())
+with col4:
+    most_common_ac = display_df['ACT'].mode()[0]
+    st.metric("Meest gebruikt toestel", most_common_ac)
+
+st.divider()
 # --- BUBBEL DIAGRAM ---
 st.header("Wereldwijde Vluchtactiviteit")
 fig_bubbles = px.scatter_geo(
