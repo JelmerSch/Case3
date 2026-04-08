@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import plotly.express as px
 
-
+#startdash
 ######################
 ###   Configuratie ###
 ######################
