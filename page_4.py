@@ -9,6 +9,8 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.preprocessing import LabelEncoder
 from Startdash import initialize_data
 
+#Vertragingsanalyse
+
 # Initialiseer de data (laadt de data in de session state)
 initialize_data()
 
