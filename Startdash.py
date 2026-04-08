@@ -347,22 +347,13 @@ with st.container():
 st.divider()
     
 # Key Metrics
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3 = st.columns(3)
 
 with col1:
     st.metric("Totaal aantal vluchten", len(display_df))
 with col2:
-    # Check of de kolom 'Delay_min' bestaat voordat we de mean berekenen, anders geeft dat een fout
-    if 'Delay_min' in display_df.columns:
-        avg_delay = display_df[display_df['Delay_min'] > 0]['Delay_min'].mean()
-        # Controleer of avg_delay geen NaN is (als er geen vertragingen zijn)
-        avg_delay_str = f"{avg_delay:.1f} min" if not pd.isna(avg_delay) else "0.0 min"
-    else:
-        avg_delay_str = "Geen data"
-    st.metric("Gem. Vertraging", avg_delay_str)
-with col3:
     st.metric("Unieke Bestemmingen", display_df['Org/Des'].nunique())
-with col4:
+with col3:
     if not display_df['ACT'].empty:
         most_common_ac = display_df['ACT'].mode()[0]
     else:
