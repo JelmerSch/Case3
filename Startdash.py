@@ -266,6 +266,36 @@ geselecteerde_periode = st.sidebar.slider(
     format="DD-MM-YYYY",
 )
 
+##### nieuw toegevoegd
+# --- SIDEBAR: Landenfilter toevoegen ---
+# Merge eerst de gefilterde schedule met df_airports om de 'Country' te krijgen
+df_schedule_with_country = pd.merge(
+    df_schedule_filtered, 
+    df_airports[['ICAO', 'Country']], 
+    left_on="Org/Des", 
+    right_on="ICAO", 
+    how="left"
+)
+
+# Maak een lijst van unieke landen voor in de filter
+beschikbare_landen = df_schedule_with_country['Country'].dropna().unique()
+
+# Maak de multiselect in de sidebar
+selected_country = st.sidebar.multiselect(
+    "Selecteer Land(en)",
+    options=beschikbare_landen,
+    default=beschikbare_landen # Selecteer standaard alles
+)
+
+# Filter de display_df op de gekozen landen
+if selected_country:
+    display_df = df_schedule_with_country[df_schedule_with_country['Country'].isin(selected_country)]
+else:
+    # Als er niets geselecteerd is, toon niks (of juist alles, wat je voorkeur heeft)
+    display_df = df_schedule_with_country
+
+#####
+
 mask = (df_schedule["Datum"] >= geselecteerde_periode[0]) & (df_schedule["Datum"] <= geselecteerde_periode[1])
 df_schedule_filtered = df_schedule[mask]
 
