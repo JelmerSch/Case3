@@ -7,6 +7,8 @@ from Startdash import initialize_data
 # Session_state aanroepen voor data
 initialize_data()
 
+#7 Vliegtuig vluchten
+
 ######################
 ###  Inladen data  ###
 ######################
