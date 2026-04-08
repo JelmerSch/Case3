@@ -317,6 +317,10 @@ with st.container():
     )
 st.divider()
 
+
+display_df = df[df['Country'].isin(selected_country)]
+
+    
 # Key Metrics
 col1, col2, col3, col4 = st.columns(4)
 
