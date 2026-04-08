@@ -353,7 +353,7 @@ st.plotly_chart(fig_bar, use_container_width=True)
 
 st.divider()
 
-# VERDELING VERTRAGINGSCATEGORIEËN ---
+# --- VERDELING VERTRAGINGSCATEGORIEËN ---
 st.header("Verdeling van Vertragingen")
 
 col_text, col_chart = st.columns([1, 1])
@@ -364,25 +364,40 @@ with col_text:
     Dit geeft een direct beeld van de punctualiteit binnen het netwerk.
 
     **Wat betekenen deze categorieën?**
-    * **On time (Op tijd):** Vluchten die minder dan **5 minuten** afwijken van hun geplande aankomst- of vertrektijd.
-    * **Small delay (Kleine vertraging):** Vluchten met een vertraging tussen de **5 en 45 minuten**. Dit zijn vaak operationele vertragingen die nog beperkte impact hebben op de rest van de planning.
-    * **Large delay (Grote vertraging):** Vluchten die meer dan **45 minuten** te laat zijn. Deze vertragingen hebben vaak een grote impact op aansluitende vluchten en passagiers.
+    * **On time (Op tijd):** Vluchten die minder dan **5 minuten** afwijken van hun geplande tijd.
+    * **Small delay (Kleine vertraging):** Vluchten met een vertraging tussen de **5 en 45 minuten**.
+    * **Large delay (Grote vertraging):** Vluchten die meer dan **45 minuten** te laat zijn.
     """)
 
 with col_chart:
-    # Berekening voor het figuur (gebruik makend van de vertragingsanalyse logica)
-    # We passen de categorie-functie toe op de vertragingsdata
+    # We definiëren de functie lokaal
     def get_cat(v):
         if v < 5: return "On time"
         elif v <= 45: return "Small delay"
         else: return "Large delay"
     
-    # We gebruiken de delay data uit de geladen data
-    # (Zorg dat 'Delay_min' beschikbaar is in je display_df)
-    cat_counts = display_df['Delay_min'].apply(get_cat).value_counts().reindex(
-        ["On time", "Small delay", "Large delay"]
-    )
+    # Let op: We gebruiken hier df_schedule_filtered en berekenen de vertraging indien nodig
+    # Als Delay_min nog niet in df_schedule_filtered zit, berekenen we het hier:
+    if 'Delay_min' not in df_schedule_filtered.columns:
+        # Voorbeeld berekening gebaseerd op je eerdere code logica
+        # Pas dit aan als je kolommen anders heten in deze specifieke dataset
+        try:
+            temp_df = df_schedule_filtered.copy()
+            # Zorg dat de kolomnaam overeenkomt met je data (bijv. 'Delay_min' of 'vertraging')
+            # Voor nu gaan we ervan uit dat je de kolom in je inlaadproces al hebt aangemaakt
+            cat_counts = temp_df['Delay_min'].apply(get_cat).value_counts().reindex(
+                ["On time", "Small delay", "Large delay"]
+            )
+        except:
+            # Fallback als de kolom niet bestaat om de app niet te laten crashen
+            st.warning("Vertragingsdata niet beschikbaar voor deze selectie.")
+            cat_counts = pd.Series([0,0,0], index=["On time", "Small delay", "Large delay"])
+    else:
+        cat_counts = df_schedule_filtered['Delay_min'].apply(get_cat).value_counts().reindex(
+            ["On time", "Small delay", "Large delay"]
+        )
 
+    import plotly.graph_objects as go
     fig_pie_cat = go.Figure(go.Pie(
         labels=cat_counts.index,
         values=cat_counts.values,
