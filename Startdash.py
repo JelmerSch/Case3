@@ -266,8 +266,15 @@ geselecteerde_periode = st.sidebar.slider(
     format="DD-MM-YYYY",
 )
 
-##### nieuw toegevoegd
-# --- SIDEBAR: Landenfilter toevoegen ---
+# 1. EERST filteren op datum
+mask = (df_schedule["Datum"] >= geselecteerde_periode[0]) & (df_schedule["Datum"] <= geselecteerde_periode[1])
+df_schedule_filtered = df_schedule[mask]
+
+if df_schedule_filtered.empty:
+    st.warning("Er zijn geen vluchten gevonden in de geselecteerde periode.")
+    st.stop()
+
+# 2. DAARNA pas de data mergen voor het landenfilter
 # Merge eerst de gefilterde schedule met df_airports om de 'Country' te krijgen
 df_schedule_with_country = pd.merge(
     df_schedule_filtered, 
@@ -291,19 +298,11 @@ selected_country = st.sidebar.multiselect(
 if selected_country:
     display_df = df_schedule_with_country[df_schedule_with_country['Country'].isin(selected_country)]
 else:
-    # Als er niets geselecteerd is, toon niks (of juist alles, wat je voorkeur heeft)
+    # Als er niets geselecteerd is, toon alles
     display_df = df_schedule_with_country
 
-#####
 
-mask = (df_schedule["Datum"] >= geselecteerde_periode[0]) & (df_schedule["Datum"] <= geselecteerde_periode[1])
-df_schedule_filtered = df_schedule[mask]
-
-if df_schedule_filtered.empty:
-    st.warning("Er zijn geen vluchten gevonden in de geselecteerde periode.")
-    st.stop()
-
-# --- DATA VOORBEREIDEN ---
+# --- DATA VOORBEREIDEN VOOR MAP ---
 flight_counts = (
     df_schedule_filtered.groupby("Org/Des")
     .size()
@@ -346,10 +345,6 @@ with st.container():
         f"**{geselecteerde_periode[0].strftime('%d-%m-%Y')} tot {geselecteerde_periode[1].strftime('%d-%m-%Y')}**"
     )
 st.divider()
-
-
-display_df = df[df['Country'].isin(selected_country)]
-
     
 # Key Metrics
 col1, col2, col3, col4 = st.columns(4)
@@ -357,15 +352,25 @@ col1, col2, col3, col4 = st.columns(4)
 with col1:
     st.metric("Totaal aantal vluchten", len(display_df))
 with col2:
-    avg_delay = display_df[display_df['Delay_min'] > 0]['Delay_min'].mean()
-    st.metric("Gem. Vertraging", f"{avg_delay:.1f} min")
+    # Check of de kolom 'Delay_min' bestaat voordat we de mean berekenen, anders geeft dat een fout
+    if 'Delay_min' in display_df.columns:
+        avg_delay = display_df[display_df['Delay_min'] > 0]['Delay_min'].mean()
+        # Controleer of avg_delay geen NaN is (als er geen vertragingen zijn)
+        avg_delay_str = f"{avg_delay:.1f} min" if not pd.isna(avg_delay) else "0.0 min"
+    else:
+        avg_delay_str = "Geen data"
+    st.metric("Gem. Vertraging", avg_delay_str)
 with col3:
     st.metric("Unieke Bestemmingen", display_df['Org/Des'].nunique())
 with col4:
-    most_common_ac = display_df['ACT'].mode()[0]
+    if not display_df['ACT'].empty:
+        most_common_ac = display_df['ACT'].mode()[0]
+    else:
+        most_common_ac = "N/A"
     st.metric("Meest gebruikt toestel", most_common_ac)
 
 st.divider()
+
 # --- BUBBEL DIAGRAM ---
 st.header("Wereldwijde Vluchtactiviteit")
 fig_bubbles = px.scatter_geo(
@@ -402,5 +407,4 @@ fig_bar = px.bar(
 )
 fig_bar.update_layout(yaxis={"categoryorder": "total ascending"})
 st.plotly_chart(fig_bar, use_container_width=True)
-
 
